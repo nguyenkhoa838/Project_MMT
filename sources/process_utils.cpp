@@ -1,11 +1,4 @@
-#include "../includes/process_utils.h"
-#include <Windows.h>
-#include <TlHelp32.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <string.h>
-#include <cwchar>
+#include "../includes/tasks.h"
 
 std::string listProcesses()
 {

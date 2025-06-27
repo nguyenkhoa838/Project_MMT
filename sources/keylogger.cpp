@@ -1,11 +1,4 @@
-#include "../includes/keylogger.h"
-#include <iostream>
-#include <Windows.h>
-#include <fstream>
-#include <string>
-#include <thread>
-#include <atomic>
-#include <mutex>
+#include "../includes/tasks.h"
 
 std::atomic<bool> isRunning(false);
 std::mutex fileMutex;
