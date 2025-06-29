@@ -26,8 +26,16 @@ cv::Mat captureScreenMat()
     bi.biBitCount = 24; // 24 bits per pixel
     bi.biCompression = BI_RGB;
 
+
+    int stride = ((width * 3 + 3) & ~3); // Ensure stride is a multiple of 4
+    std::vector<BYTE> buf(stride * height);
     cv::Mat mat(height, width, CV_8UC3);
-    GetDIBits(hdcMem, hBitmap, 0, height, mat.data, (BITMAPINFO*)&bi, DIB_RGB_COLORS);
+    GetDIBits(hdcMem, hBitmap, 0, height, buf.data(), (BITMAPINFO*)&bi, DIB_RGB_COLORS);
+
+    for (int i = 0; i < height; i++)
+    {
+        memcpy(mat.ptr(i), buf.data() + i * stride, width * 3); // Copy each row
+    }
 
     DeleteObject(hBitmap);
     DeleteDC(hdcMem);
@@ -48,10 +56,11 @@ void startScreenRecording(const std::string& filename)
     recording = true;
     recordThread = std::thread([filename]()
     {
-        int fps = 10; // Frames per second
+        int fps = 30; // Frames per second for the recording
         cv::Mat frame = captureScreenMat();
         int width = frame.cols;
         int height = frame.rows;
+
 
         cv::VideoWriter writer(filename, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), fps, cv::Size(width, height));
         if (!writer.isOpened())
