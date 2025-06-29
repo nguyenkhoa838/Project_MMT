@@ -18,6 +18,7 @@
 #include <WS2tcpip.h>
 #include <chrono>
 #include <cstdlib>
+#include <opencv2/opencv.hpp>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -33,3 +34,4 @@ bool captureWebcamPhoto(const std::string& filename);
 std::string captureWebcamFrames(int duration);
 bool fileExists(const std::string& filename);
 void startSocketServer();
+void handleCommand(SOCKET sock, const std::string& cmd);
