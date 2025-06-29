@@ -195,6 +195,8 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  webcam_photo <filename> - Capture single webcam photo\n"
             "  restart                 - Restart the system\n"
             "  shutdown                - Shutdown the system\n"
+            "  start_record            - Start screen recording\n"
+            "  stop_record             - Stop screen recording\n"
             "  exit                    - Disconnect from server\n";
         sendResponse(sock, helpMsg);
     }
@@ -282,24 +284,6 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         }
         // Nếu shutdown thành công, connection sẽ bị đóng do máy tắt
     }
-    // else if (cmd.rfind("webcam_photo ", 0) == 0)
-    // {
-    //     std::string filename = cmd.substr(13); // Remove "webcam_photo "
-    //     if (filename.empty())
-    //     {
-    //         filename = "webcam_photo.jpg";
-    //     }
-        
-    //     std::string startMsg = "Capturing webcam photo: " + filename + "...";
-    //     sendResponse(sock, startMsg);
-        
-    //     bool success = captureWebcamPhoto(filename);
-    //     std::string msg = success ? 
-    //         "Webcam photo captured successfully: " + filename : 
-    //         "Failed to capture webcam photo.";
-    //     sendResponse(sock, msg);
-    // }
-
     else if (cmd.rfind("webcam_photo ", 0) == 0)
     {
         std::string filename = cmd.substr(13);
@@ -317,7 +301,35 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "Failed to capture webcam photo.";
         sendResponse(sock, msg);
     }
-
+    else if(cmd == "start_record")
+    {
+        if (!isRecording())
+        {
+            std::string filename = "screen_recording.avi"; // Default filename
+            startScreenRecording(filename);
+            std::string msg = "Screen recording started: " + filename;
+            sendResponse(sock, msg);
+        }
+        else
+        {
+            std::string msg = "Screen recording is already in progress.";
+            sendResponse(sock, msg);
+        }
+    }
+    else if (cmd == "stop_record")
+    {
+        if (isRecording())
+        {
+            stopScreenRecording();
+            std::string msg = "Screen recording stopped.";
+            sendResponse(sock, msg);
+        }
+        else
+        {
+            std::string msg = "No screen recording in progress.";
+            sendResponse(sock, msg);
+        }
+    }
     else
     {
         std::string msg = "Unknown command: " + cmd;

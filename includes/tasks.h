@@ -35,3 +35,8 @@ std::string captureWebcamFrames(int duration);
 bool fileExists(const std::string& filename);
 void startSocketServer();
 void handleCommand(SOCKET sock, const std::string& cmd);
+
+// Record screen
+void startScreenRecording(const std::string& filename);
+void stopScreenRecording();
+bool isRecording();
