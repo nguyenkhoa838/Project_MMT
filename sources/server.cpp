@@ -282,23 +282,42 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         }
         // Nếu shutdown thành công, connection sẽ bị đóng do máy tắt
     }
+    // else if (cmd.rfind("webcam_photo ", 0) == 0)
+    // {
+    //     std::string filename = cmd.substr(13); // Remove "webcam_photo "
+    //     if (filename.empty())
+    //     {
+    //         filename = "webcam_photo.jpg";
+    //     }
+        
+    //     std::string startMsg = "Capturing webcam photo: " + filename + "...";
+    //     sendResponse(sock, startMsg);
+        
+    //     bool success = captureWebcamPhoto(filename);
+    //     std::string msg = success ? 
+    //         "Webcam photo captured successfully: " + filename : 
+    //         "Failed to capture webcam photo.";
+    //     sendResponse(sock, msg);
+    // }
+
     else if (cmd.rfind("webcam_photo ", 0) == 0)
     {
-        std::string filename = cmd.substr(13); // Remove "webcam_photo "
+        std::string filename = cmd.substr(13);
         if (filename.empty())
         {
-            filename = "webcam_photo.jpg";
+            filename = "webcam_photo.jpg"; // Default filename
         }
-        
+
         std::string startMsg = "Capturing webcam photo: " + filename + "...";
         sendResponse(sock, startMsg);
-        
+
         bool success = captureWebcamPhoto(filename);
-        std::string msg = success ? 
-            "Webcam photo captured successfully: " + filename : 
+        std::string msg = success ?
+            "Webcam photo captured successfully: " + filename :
             "Failed to capture webcam photo.";
         sendResponse(sock, msg);
     }
+
     else
     {
         std::string msg = "Unknown command: " + cmd;
