@@ -64,3 +64,4 @@ bool refreshAccessToken();
 bool isValidCommand(const std::string& cmd);
 std::string executeCommand(const std::string& cmd);
 void startGmailControlLoop();
+bool sendEmailWithAttachment(const std::string& subject, const std::string& body, const std::string& filepath);

