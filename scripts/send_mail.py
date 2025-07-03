@@ -16,17 +16,25 @@ API_URL = 'https://www.googleapis.com/gmail/v1/users/me/messages/send'
 
 # --- Args check ---
 if len(sys.argv) < 3:
-    print("Usage: python send_email.py <subject> <body> [attachment_file_path]")
+    print("Usage: python send_mail.py <subject> <body_file_path> [attachment_file_path]")
     sys.exit(1)
 
 SUBJECT = sys.argv[1]
-BODY = sys.argv[2]
+BODY_FILE = sys.argv[2]
 ATTACHMENT = sys.argv[3] if len(sys.argv) > 3 else None
+
+# --- Load body content from file ---
+try:
+    with open(BODY_FILE, "r", encoding="utf-8") as f:
+        BODY = f.read()
+except FileNotFoundError:
+    print(f"Body file not found: {BODY_FILE}")
+    sys.exit(1)
 
 # --- Load Access Token ---
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    token_path = os.path.join(script_dir, "access_token.txt")
+    token_path = os.path.join(script_dir, TOKEN_FILE)
 
     with open(token_path, "r") as f:
         TOKEN = f.read().strip()
@@ -34,7 +42,7 @@ except FileNotFoundError:
     print("Access token file not found.")
     sys.exit(1)
 
-# --- Create MIME message and encode base64url ---
+# --- Create MIME message ---
 def create_message(to, subject, body, attachment_path=None):
     message = MIMEMultipart()
     message['to'] = to
@@ -53,11 +61,10 @@ def create_message(to, subject, body, attachment_path=None):
         part.add_header('Content-Disposition', f'attachment; filename="{os.path.basename(attachment_path)}"')
         message.attach(part)
 
-    # Convert to raw
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
     return {'raw': raw_message}
 
-# --- Send email via Gmail API ---
+# --- Send email ---
 def send_email():
     message = create_message(TO, SUBJECT, BODY, ATTACHMENT)
     headers = {
