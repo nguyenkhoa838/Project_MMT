@@ -31,6 +31,7 @@ g++ ../sources/client.cpp ^
     ../sources/screen_record.cpp ^
     ../sources/list_apps.cpp ^
     ../sources/mail_utils.cpp ^
+    ../sources/file_utils.cpp ^
     -I"C:/msys64/ucrt64/include/opencv4" ^
     -L"C:/msys64/ucrt64/lib" ^
     -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio ^
