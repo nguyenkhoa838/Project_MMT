@@ -21,7 +21,7 @@ if len(sys.argv) != 3:
 
 subject = sys.argv[1]
 input_arg = sys.argv[2]
-
+ 
 message = EmailMessage()
 message["To"] = TO
 message["From"] = FROM

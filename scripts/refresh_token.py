@@ -10,7 +10,7 @@ SCOPES = [
     'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/drive.file'
 ]
-
+ 
 def refresh_access_token():
     script_dir = os.path.dirname(os.path.abspath(__file__))
 

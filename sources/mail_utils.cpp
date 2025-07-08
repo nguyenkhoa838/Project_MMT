@@ -237,7 +237,6 @@ std::string executeCommand(const std::string& cmd)
         else return "No recording in progress.";
     }
 
-
     return "Unknown command: " + cmd;
 }
 
