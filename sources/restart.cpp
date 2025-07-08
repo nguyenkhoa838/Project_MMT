@@ -4,18 +4,15 @@ bool restartSystem()
 {
     std::cout << "Attempting to restart the system..." << std::endl;
     
-    // Lấy token của process hiện tại với đặc quyền shutdown
     HANDLE hToken;
     TOKEN_PRIVILEGES tkp;
     
-    // Mở process token
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
     {
         std::cerr << "OpenProcessToken failed: " << GetLastError() << std::endl;
         return false;
     }
     
-    // Tìm LUID cho shutdown privilege
     if (!LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &tkp.Privileges[0].Luid))
     {
         std::cerr << "LookupPrivilegeValue failed: " << GetLastError() << std::endl;
@@ -23,10 +20,9 @@ bool restartSystem()
         return false;
     }
     
-    tkp.PrivilegeCount = 1;  // Một privilege để set
+    tkp.PrivilegeCount = 1;
     tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
     
-    // Kích hoạt shutdown privilege
     if (!AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, (PTOKEN_PRIVILEGES)NULL, 0))
     {
         std::cerr << "AdjustTokenPrivileges failed: " << GetLastError() << std::endl;
@@ -41,9 +37,6 @@ bool restartSystem()
         return false;
     }
     
-    // Thực hiện restart
-    // EWX_REBOOT: restart máy
-    // EWX_FORCE: buộc tắt các ứng dụng không phản hồi
     if (!ExitWindowsEx(EWX_REBOOT | EWX_FORCE, 
                        SHTDN_REASON_MAJOR_APPLICATION | 
                        SHTDN_REASON_MINOR_MAINTENANCE | 

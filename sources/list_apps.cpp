@@ -9,11 +9,11 @@ bool isAppProcess(DWORD pid)
         GetWindowThreadProcessId(hwnd, &windowPID);
         if (windowPID == pid && IsWindowVisible(hwnd))
         {
-            return true; // This process has a visible window
+            return true;
         }
         hwnd = GetNextWindow(hwnd, GW_HWNDNEXT);
     }
-    return false; // No visible window found for this process
+    return false;
 }
 
 std::string wcharToString(const wchar_t* wstr)

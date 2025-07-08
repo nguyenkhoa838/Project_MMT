@@ -8,13 +8,11 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
-# --- Constants ---
 TO = 'vnkhoa2438@clc.fitus.edu.vn'
 FROM = 'vonguyenkhoa838@gmail.com'
 TOKEN_FILE = 'access_token.txt'
 API_URL = 'https://www.googleapis.com/gmail/v1/users/me/messages/send'
 
-# --- Args check ---
 if len(sys.argv) < 3:
     print("Usage: python send_mail.py <subject> <body_file_path> [attachment_file_path]")
     sys.exit(1)
@@ -23,7 +21,6 @@ SUBJECT = sys.argv[1]
 BODY_FILE = sys.argv[2]
 ATTACHMENT = sys.argv[3] if len(sys.argv) > 3 else None
 
-# --- Load body content from file ---
 try:
     with open(BODY_FILE, "r", encoding="utf-8") as f:
         BODY = f.read()
@@ -31,7 +28,6 @@ except FileNotFoundError:
     print(f"Body file not found: {BODY_FILE}")
     sys.exit(1)
 
-# --- Load Access Token ---
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     token_path = os.path.join(script_dir, TOKEN_FILE)
@@ -42,7 +38,6 @@ except FileNotFoundError:
     print("Access token file not found.")
     sys.exit(1)
 
-# --- Create MIME message ---
 def create_message(to, subject, body, attachment_path=None):
     message = MIMEMultipart()
     message['to'] = to
@@ -64,7 +59,6 @@ def create_message(to, subject, body, attachment_path=None):
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
     return {'raw': raw_message}
 
-# --- Send email ---
 def send_email():
     message = create_message(TO, SUBJECT, BODY, ATTACHMENT)
     headers = {
@@ -78,6 +72,5 @@ def send_email():
     else:
         print(f"Failed to send email: {response.status_code} - {response.text}")
 
-# --- Run ---
 if __name__ == '__main__':
     send_email()

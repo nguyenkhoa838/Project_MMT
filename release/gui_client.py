@@ -11,7 +11,6 @@ class NetworkClientGUI:
         self.root.title("Client Network Control")
         self.sock = None
 
-        # Khu vực nhập IP và nút Kết nối
         ip_frame = tk.Frame(root)
         ip_frame.pack(padx=10, pady=5)
 
@@ -23,18 +22,14 @@ class NetworkClientGUI:
         self.connect_button = tk.Button(ip_frame, text="Connect", command=self.connect_to_server)
         self.connect_button.pack(side=tk.LEFT)
 
-        # Entry nhập lệnh
         self.command_entry = tk.Entry(root, width=60)
         self.command_entry.pack(padx=10, pady=5)
 
-        # Nút gửi lệnh
         self.send_button = tk.Button(root, text="Send Command", command=self.send_command)
         self.send_button.pack(pady=5)
 
-        # Nút chức năng chính
         self.create_buttons()
 
-        # Kết quả đầu ra
         self.output_box = scrolledtext.ScrolledText(root, width=80, height=20)
         self.output_box.pack(padx=10, pady=10)
 

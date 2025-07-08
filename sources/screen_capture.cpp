@@ -1,15 +1,11 @@
 #include "../includes/tasks.h"
 
-// STB Image Write implementation (header-only library)
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 namespace stb {
-    // Simple PNG writer implementation
     bool write_png(const char* filename, int w, int h, int comp, const void* data, int stride_in_bytes) {
         std::ofstream file(filename, std::ios::binary);
         if (!file.is_open()) return false;
         
-        // Simple BMP format instead of PNG for simplicity
-        // BMP header
         unsigned char header[54] = {
             0x42, 0x4D, 0, 0, 0, 0, 0, 0, 0, 0, 54, 0, 0, 0, 40, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -25,24 +21,22 @@ namespace stb {
         header[19] = (unsigned char)(w >> 8);
         header[20] = (unsigned char)(w >> 16);
         header[21] = (unsigned char)(w >> 24);
-        header[22] = (unsigned char)(-h);        // Negative height for top-down
+        header[22] = (unsigned char)(-h);
         header[23] = (unsigned char)((-h) >> 8);
         header[24] = (unsigned char)((-h) >> 16);
         header[25] = (unsigned char)((-h) >> 24);
         
         file.write((char*)header, 54);
         
-        // Write pixel data (RGB format after conversion) - top-down order
         const unsigned char* pixels = (const unsigned char*)data;
         int padding = (4 - (w * 3) % 4) % 4;
         
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int idx = (y * w + x) * 3;
-                // Data is now RGB, but BMP expects BGR, so reverse again
-                file.put(pixels[idx + 2]); // Blue (was Red)
-                file.put(pixels[idx + 1]); // Green
-                file.put(pixels[idx]);     // Red (was Blue)
+                file.put(pixels[idx + 2]);
+                file.put(pixels[idx + 1]);
+                file.put(pixels[idx]);
             }
             for (int p = 0; p < padding; p++) {
                 file.put(0);

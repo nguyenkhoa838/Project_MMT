@@ -109,7 +109,7 @@ int main()
             break;
         }
 
-        // Gửi lệnh đến server
+        // Send command to server
         if (send(sock, cmd.c_str(), cmd.size(), 0) == SOCKET_ERROR)
         {
             std::cerr << "Failed to send command to server." << std::endl;
@@ -117,7 +117,7 @@ int main()
         }
         std::cout << "Command sent: " << cmd << std::endl;
 
-        // Nhận response từ server
+        // Receive response from server
         char buffer[1024];
         int len = recv(sock, buffer, sizeof(buffer) - 1, 0);
         if (len <= 0) 

