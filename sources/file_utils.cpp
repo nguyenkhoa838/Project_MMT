@@ -1,5 +1,11 @@
 #include "../includes/tasks.h"
 
+bool fileExists(const std::string& filename)
+{
+    std::ifstream file(filename);
+    return file.good();
+}
+
 bool copyFile(const std::string& sourcePath, const std::string& destPath)
 {
     try

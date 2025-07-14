@@ -71,3 +71,4 @@ bool sendEmailWithAttachment(const std::string& subject, const std::string& body
 
 // Copy file
 bool copyFile(const std::string& sourcePath, const std::string& destPath);
+bool fileExists(const std::string& filename);
