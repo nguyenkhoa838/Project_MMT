@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import scrolledtext, filedialog, messagebox
 import socket
 import threading
+import struct
+import os
 
 DEFAULT_PORT = 12345
 
@@ -99,6 +101,7 @@ class NetworkClientGUI:
         try:
             self.sock.sendall(cmd.encode())
             self.output_box.insert(tk.END, f">> {cmd}\n")
+            self.last_command = cmd  # Store the last command
             threading.Thread(target=self.receive_response, daemon=True).start()
         except Exception as e:
             self.output_box.insert(tk.END, f"Failed to send: {e}\n")
@@ -106,6 +109,7 @@ class NetworkClientGUI:
     def send_predefined(self, command):
         self.command_entry.delete(0, tk.END)
         self.command_entry.insert(0, command)
+        self.last_command = command  # Store the last command
         self.send_command()
 
     def send_start(self):
@@ -123,6 +127,50 @@ class NetworkClientGUI:
         if path:
             self.send_predefined(f"copyfile {path}")
 
+    def receive_file(self):
+        try:
+            # Receive filename length
+            name_len_data = self.sock.recv(4)
+            if len(name_len_data) != 4:
+                return False
+            name_len = struct.unpack('I', name_len_data)[0]
+            
+            # Receive filename
+            filename_data = self.sock.recv(name_len)
+            if len(filename_data) != name_len:
+                return False
+            filename = "received_" + filename_data.decode()
+            
+            # Receive file size
+            file_size_data = self.sock.recv(4)
+            if len(file_size_data) != 4:
+                return False
+            file_size = struct.unpack('I', file_size_data)[0]
+            
+            if file_size == 0:
+                return False
+            
+            # Receive file content
+            with open(filename, 'wb') as f:
+                total_received = 0
+                while total_received < file_size:
+                    remaining = file_size - total_received
+                    chunk_size = min(remaining, 4096)
+                    chunk = self.sock.recv(chunk_size)
+                    if not chunk:
+                        return False
+                    f.write(chunk)
+                    total_received += len(chunk)
+            
+            self.output_box.insert(tk.END, f"File received successfully: {filename} ({file_size} bytes)\n")
+            self.output_box.see(tk.END)
+            return True
+            
+        except Exception as e:
+            self.output_box.insert(tk.END, f"Error receiving file: {e}\n")
+            self.output_box.see(tk.END)
+            return False
+
     def receive_response(self):
         try:
             data = self.sock.recv(4096)
@@ -130,6 +178,18 @@ class NetworkClientGUI:
                 response = data.decode()
                 self.output_box.insert(tk.END, f"{response}\n")
                 self.output_box.see(tk.END)
+                
+                # Check if server is sending a file
+                last_command = getattr(self, 'last_command', '')
+                if (("Screenshot captured successfully" in response and last_command == "screenshot") or
+                    ("Screen recording stopped" in response and last_command == "stop_record")):
+                    self.output_box.insert(tk.END, "Waiting to receive file from server...\n")
+                    self.output_box.see(tk.END)
+                    if self.receive_file():
+                        self.output_box.insert(tk.END, "File transfer completed successfully.\n")
+                    else:
+                        self.output_box.insert(tk.END, "File transfer failed.\n")
+                    self.output_box.see(tk.END)
             else:
                 self.output_box.insert(tk.END, "Server closed the connection.\n")
         except Exception as e:

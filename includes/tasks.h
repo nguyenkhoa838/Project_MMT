@@ -47,9 +47,9 @@ bool captureScreen(const std::string& filename);
 bool captureWebcamPhoto(const std::string& filename);
 std::string captureWebcamFrames(int duration);
 
-bool fileExists(const std::string& filename);
 void startSocketServer();
 void handleCommand(SOCKET sock, const std::string& cmd);
+bool sendFileToClient(SOCKET sock, const std::string& filePath);
 
 // Record screen
 void startScreenRecording(const std::string& filename);

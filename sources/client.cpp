@@ -78,6 +78,76 @@ bool sendFile(SOCKET sock, const std::string& filePath)
     return true;
 }
 
+bool receiveFile(SOCKET sock)
+{
+    // Receive filename length
+    uint32_t nameLen;
+    if (recv(sock, reinterpret_cast<char*>(&nameLen), sizeof(nameLen), 0) != sizeof(nameLen))
+    {
+        std::cerr << "Failed to receive filename length." << std::endl;
+        return false;
+    }
+    
+    // Receive filename
+    char* nameBuf = new char[nameLen + 1];
+    if (recv(sock, nameBuf, nameLen, 0) != nameLen)
+    {
+        std::cerr << "Failed to receive filename." << std::endl;
+        delete[] nameBuf;
+        return false;
+    }
+    nameBuf[nameLen] = '\0';
+    
+    std::string filename = "received_" + std::string(nameBuf);
+    delete[] nameBuf;
+    
+    // Receive file size
+    uint32_t fileSize;
+    if (recv(sock, reinterpret_cast<char*>(&fileSize), sizeof(fileSize), 0) != sizeof(fileSize))
+    {
+        std::cerr << "Failed to receive file size." << std::endl;
+        return false;
+    }
+    
+    if (fileSize == 0)
+    {
+        std::cout << "No file content received." << std::endl;
+        return false;
+    }
+    
+    // Receive file content
+    std::ofstream file(filename, std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to create file: " << filename << std::endl;
+        return false;
+    }
+    
+    char buffer[4096];
+    uint32_t totalReceived = 0;
+    
+    while (totalReceived < fileSize)
+    {
+        uint32_t remainingBytes = fileSize - totalReceived;
+        uint32_t bytesToReceive = std::min(remainingBytes, static_cast<uint32_t>(sizeof(buffer)));
+        
+        int bytesReceived = recv(sock, buffer, bytesToReceive, 0);
+        if (bytesReceived <= 0)
+        {
+            std::cerr << "Failed to receive file content." << std::endl;
+            file.close();
+            return false;
+        }
+        
+        file.write(buffer, bytesReceived);
+        totalReceived += bytesReceived;
+    }
+    
+    file.close();
+    std::cout << "File received successfully: " << filename << " (" << fileSize << " bytes)" << std::endl;
+    return true;
+}
+
 int main()
 {
     WSADATA wsa;
@@ -126,7 +196,23 @@ int main()
             break;
         }
         buffer[len] = '\0';
-        std::cout << "Server response: " << buffer << std::endl;
+        std::string response(buffer);
+        std::cout << "Server response: " << response << std::endl;
+        
+        // Check if server is sending a file (for screenshot or recording)
+        if ((cmd == "screenshot" && response.find("Screenshot captured successfully") != std::string::npos) ||
+            (cmd == "stop_record" && response.find("Screen recording stopped") != std::string::npos))
+        {
+            std::cout << "Waiting to receive file from server..." << std::endl;
+            if (receiveFile(sock))
+            {
+                std::cout << "File transfer completed successfully." << std::endl;
+            }
+            else
+            {
+                std::cout << "File transfer failed." << std::endl;
+            }
+        }
     }
 
     closesocket(sock);
