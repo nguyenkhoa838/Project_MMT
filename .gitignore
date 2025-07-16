@@ -7,3 +7,4 @@ scripts/access_token.txt
 scripts/refresh_token.txt
 scripts/token.pickle
 scripts/client_secret.json
+scripts/mailConfig.txt

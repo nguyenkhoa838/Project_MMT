@@ -6,8 +6,10 @@ from email.message import EmailMessage
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 
-TO = "vnkhoa2438@clc.fitus.edu.vn"
-FROM = "vonguyenkhoa838@gmail.com"
+fi = open("../scripts/mailConfig.txt", "r")
+TO = fi.readline().strip()
+FROM = fi.readline().strip()
+fi.close()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 token_path = os.path.join(script_dir, "access_token.txt")

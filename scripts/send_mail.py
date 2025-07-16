@@ -8,8 +8,12 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
-TO = 'vnkhoa2438@clc.fitus.edu.vn'
-FROM = 'vonguyenkhoa838@gmail.com'
+
+fi = open("../scripts/mailConfig.txt", "r")
+TO = fi.readline().strip()
+FROM = fi.readline().strip()
+fi.close()
+
 TOKEN_FILE = 'access_token.txt'
 API_URL = 'https://www.googleapis.com/gmail/v1/users/me/messages/send'
 
