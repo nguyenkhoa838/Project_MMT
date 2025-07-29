@@ -47,7 +47,6 @@ def create_message(to, subject, body, attachment_path=None):
     message['to'] = to
     message['from'] = FROM
     message['subject'] = subject
-
     # Body text
     message.attach(MIMEText(body, 'plain'))
 
