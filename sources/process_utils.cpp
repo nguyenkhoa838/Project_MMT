@@ -44,20 +44,17 @@ std::string listProcesses()
     return "process_list.txt";
 }
 
-bool startProcess(const std::string& path)
+bool startProcess(const std::string& exeName)
 {
-    STARTUPINFOA si = { sizeof(si) };
-    PROCESS_INFORMATION pi;
-    if (CreateProcessA(path.c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    HINSTANCE result = ShellExecuteA(NULL, "open", exeName.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    if ((int)result > 32)
     {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        std::cout << "Process started successfully: " << path << std::endl;
+        std::cout << "Started process: " << exeName << std::endl;
         return true;
     }
     else
     {
-        std::cerr << "Failed to start process: " << path << ", error: " << GetLastError() << std::endl;
+        std::cerr << "Failed to start process: " << exeName << ", error code: " << (int)result << std::endl;
         return false;
     }
 }

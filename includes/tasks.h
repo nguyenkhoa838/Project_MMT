@@ -26,6 +26,7 @@
 #include <filesystem>
 #include <locale>
 #include <codecvt>
+#include <shellapi.h>
 
 #pragma comment(lib, "ws2_32.lib")
 

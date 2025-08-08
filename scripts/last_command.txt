@@ -1,0 +1,1 @@
+stop explorer.exe
