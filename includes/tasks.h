@@ -56,6 +56,11 @@ void startScreenRecording(const std::string& filename);
 void stopScreenRecording();
 bool isRecording();
 
+// Record webcam
+void startWebcamRecording(const std::string& filename);
+void stopWebcamRecording();
+bool isWebcamRecording();
+
 // List user applications
 std::string listUserApps();
 

