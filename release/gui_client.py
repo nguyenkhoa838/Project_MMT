@@ -63,7 +63,7 @@ class NetworkClientGUI:
             [
                 ("restart", lambda: self.send_predefined("restart")),
                 ("shutdown", lambda: self.send_predefined("shutdown")),
-                ("start <path>", self.send_start),
+                ("start <name>", self.send_start),
                 ("stop <name>", self.send_stop),
                 ("copyfile <path>", self.send_copyfile),
                 ("exit", lambda: self.send_predefined("exit")),
@@ -113,9 +113,10 @@ class NetworkClientGUI:
         self.send_command()
 
     def send_start(self):
-        path = filedialog.askopenfilename(title="Select executable to start")
-        if path:
-            self.send_predefined(f"start {path}")
+        exe_name = simple_input("Enter executable name to start (e.g. notepad.exe)")
+        if exe_name:
+            self.send_predefined(f"start {exe_name}")
+
 
     def send_stop(self):
         name = simple_input("Enter process name to stop (e.g. notepad.exe)")
@@ -123,9 +124,10 @@ class NetworkClientGUI:
             self.send_predefined(f"stop {name}")
 
     def send_copyfile(self):
-        path = filedialog.askopenfilename(title="Select file to copy")
+        path = simple_input("Enter full file path on server")
         if path:
             self.send_predefined(f"copyfile {path}")
+
 
     def receive_file(self):
         try:
