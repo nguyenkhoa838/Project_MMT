@@ -47,14 +47,16 @@ std::string listProcesses()
 bool startProcess(const std::string& exeName)
 {
     HINSTANCE result = ShellExecuteA(NULL, "open", exeName.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    if ((int)result > 32)
+    
+    if (reinterpret_cast<std::intptr_t>(result) > 32)
     {
         std::cout << "Started process: " << exeName << std::endl;
         return true;
     }
     else
     {
-        std::cerr << "Failed to start process: " << exeName << ", error code: " << (int)result << std::endl;
+        std::cerr << "Failed to start process: " << exeName
+                  << ", error code: " << reinterpret_cast<std::intptr_t>(result) << std::endl;
         return false;
     }
 }
