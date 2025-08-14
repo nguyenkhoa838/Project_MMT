@@ -46,7 +46,6 @@ bool shutdownSystem();
 // Screen capture functions
 bool captureScreen(const std::string& filename);
 bool captureWebcamPhoto(const std::string& filename);
-std::string captureWebcamFrames(int duration);
 
 void startSocketServer();
 void handleCommand(SOCKET sock, const std::string& cmd);
@@ -57,7 +56,7 @@ void startScreenRecording(const std::string& filename);
 void stopScreenRecording();
 bool isRecording();
 
-// Record webcam
+// Webcam recording functions
 void startWebcamRecording(const std::string& filename);
 void stopWebcamRecording();
 bool isWebcamRecording();

