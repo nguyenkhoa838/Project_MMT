@@ -103,7 +103,7 @@ python release/gui_client.py
 - `help`
 - `list_services`
 - `list_apps`
-- `start <path>`
+- `start <process_name>`
 - `stop <process_name>`
 - `copyfile <source>`
 - `start_keylogger`
