@@ -13,7 +13,7 @@ g++ ../sources/server.cpp ^
     ../sources/mail_utils.cpp ^
     ../sources/file_utils.cpp ^
     ../sources/webcam_record.cpp ^
-    -I"C:/msys64/ucrt64/include/opencv4" ^ 
+    -I"C:/msys64/ucrt64/include/opencv4" ^
     -L"C:/msys64/ucrt64/lib" ^
     -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio ^
     -lopencv_imgcodecs -lopencv_video -lopencv_objdetect ^
