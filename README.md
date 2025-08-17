@@ -5,9 +5,13 @@ Project_MMT là hệ thống điều khiển máy tính từ xa qua mạng LAN v
 - Điều khiển qua socket TCP (client/server)
 - Điều khiển qua email (Gmail)
 - Ghi lại màn hình, chụp ảnh màn hình, webcam
+- Ghi video màn hình, ghi video webcam
 - Keylogger
 - Quản lý tiến trình, ứng dụng
+- Quản lý dịch vụ Windows
 - Tải file lên Google Drive, gửi file qua email
+- Sao chép file từ xa
+- Khởi động lại, tắt máy từ xa
 
 ## Cấu trúc thư mục
 
@@ -101,20 +105,24 @@ python release/gui_client.py
 ## Các lệnh hỗ trợ
 
 - `help`
-- `list_services`
-- `list_apps`
-- `start <process_name>`
-- `stop <process_name>`
-- `copyfile <source>`
-- `start_keylogger`
-- `stop_keylogger`
-- `screenshot`
-- `webcam_photo`
-- `restart`
-- `shutdown`
-- `start_record`
-- `stop_record`
-- `gmail_control`
+- `list_services` (liệt kê dịch vụ Windows)
+- `list_apps` (liệt kê ứng dụng đang chạy)
+- `start <process_name>` (khởi động ứng dụng)
+- `stop <process_name>` (dừng ứng dụng)
+- `copyfile <source>` (sao chép file)
+- `start_keylogger` (bật keylogger)
+- `stop_keylogger` (tắt keylogger)
+- `screenshot` (chụp màn hình)
+- `webcam_photo` (chụp ảnh webcam)
+- `start_record` (ghi video màn hình)
+- `stop_record` (dừng ghi video màn hình)
+- `start_webcam_record` (ghi video webcam)
+- `stop_webcam_record` (dừng ghi webcam)
+- `upload_drive <file>` (tải file lên Google Drive)
+- `send_mail <file>` (gửi file qua email)
+- `restart` (khởi động lại máy)
+- `shutdown` (tắt máy)
+- `gmail_control` (chế độ điều khiển qua email)
 
 ## Ghi chú
 
