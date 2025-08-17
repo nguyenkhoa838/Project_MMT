@@ -118,8 +118,6 @@ python release/gui_client.py
 - `stop_record` (dừng ghi video màn hình)
 - `start_webcam_record` (ghi video webcam)
 - `stop_webcam_record` (dừng ghi webcam)
-- `upload_drive <file>` (tải file lên Google Drive)
-- `send_mail <file>` (gửi file qua email)
 - `restart` (khởi động lại máy)
 - `shutdown` (tắt máy)
 - `gmail_control` (chế độ điều khiển qua email)
