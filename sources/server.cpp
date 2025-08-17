@@ -245,7 +245,7 @@ void handleCommand(SOCKET sock, const std::string& cmd)
     {
         std::string processes = listProcesses();
         std::string filename = "process_list.txt";
-        sendResponse(sock, processes);
+        // sendResponse(sock, processes);
         
         // Send the process list file to client if it exists
         if (fileExists(filename))
@@ -280,7 +280,7 @@ void handleCommand(SOCKET sock, const std::string& cmd)
     {
         std::string apps = listUserApps();
         std::string filename = "list_apps.txt";
-        sendResponse(sock, apps);
+        // sendResponse(sock, apps);
         
         // Send the apps list file to client if it exists
         if (fileExists(filename))
