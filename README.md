@@ -9,7 +9,6 @@ Project_MMT là hệ thống điều khiển máy tính từ xa qua mạng LAN v
 - Keylogger
 - Quản lý tiến trình, ứng dụng
 - Quản lý dịch vụ Windows
-- Tải file lên Google Drive, gửi file qua email
 - Sao chép file từ xa
 - Khởi động lại, tắt máy từ xa
 
