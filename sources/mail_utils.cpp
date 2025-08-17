@@ -331,6 +331,6 @@ void startGmailControlLoop()
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(0.5));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
